@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="https://polud.github.io/crypto-tax-tools/acb-pool/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crypto Tax Tools">
+<meta property="og:title" content="ACB Pool Calculator">
+<meta property="og:description" content="Same coin on several exchanges? For Canadian tax it is one pool with one average cost. See your ACB, gains, losses and superficial losses, step by step.">
+<meta property="og:url" content="https://polud.github.io/crypto-tax-tools/acb-pool/">
+<meta property="og:image" content="https://polud.github.io/crypto-tax-tools/og/acb-pool.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ACB Pool Calculator">
+<meta name="twitter:description" content="Same coin on several exchanges? For Canadian tax it is one pool with one average cost. See your ACB, gains, losses and superficial losses, step by step.">
+<meta name="twitter:image" content="https://polud.github.io/crypto-tax-tools/og/acb-pool.png">
+<title>ACB Pool Calculator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Bought the same coin on several exchanges? Canada pools it all at one average cost. Enter your trades to see the adjusted cost base, gains, losses and superficial losses, with every step shown.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: results first, then trades and settings, the pool-vs-exchange pair, the journal, an optional chart, notes. */
+:root {
+  --bg: #F4F7F8; --card: #FFFFFF; --ink: #0F1A1E; --ink-2: #44565C; --ink-3: #6B7E84; --rule: #DBE4E6; --tint: #EAF1F3;
+  --accent: #0891B2; --accent-soft: #DDF0F5;
+  --ok: #15803D; --warn: #B45309; --crit: #BE123C; --ok-soft: #E3F2E8; --warn-soft: #FBEEDD; --crit-soft: #FBE4EA;
+  --f-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D1416; --card: #141F22; --ink: #E6EDEF; --ink-2: #A9BBC0; --ink-3: #7E9298; --rule: #233237; --tint: #182629;
+  --accent: #2E9CB8; --accent-soft: #15323A;
+  --ok: #4FBF7A; --warn: #E59A3A; --crit: #F0607E; --ok-soft: #14301F; --warn-soft: #33240F; --crit-soft: #3A1720;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0D1416; --card: #141F22; --ink: #E6EDEF; --ink-2: #A9BBC0; --ink-3: #7E9298; --rule: #233237; --tint: #182629;
+  --accent: #2E9CB8; --accent-soft: #15323A;
+  --ok: #4FBF7A; --warn: #E59A3A; --crit: #F0607E; --ok-soft: #14301F; --warn-soft: #33240F; --crit-soft: #3A1720;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-ui); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 48px; display: grid; gap: 20px; }
+h1, h2 { font-family: var(--f-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+h1 { font-size: 32px; line-height: 1.1; }
+h2 { font-size: 19px; line-height: 1.25; }
+h3 { margin: 0; font-size: 13px; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-2); }
+.small { font-size: 12.5px; }
+.masthead { padding-bottom: 16px; border-bottom: 1px solid var(--rule); display: grid; gap: 6px; }
+.masthead .sub { color: var(--ink-2); max-width: 72ch; }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.stack { display: grid; gap: 16px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.field { display: grid; gap: 4px; }
+.field > span { font-size: 12.5px; color: var(--ink-2); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; }
+input[type="text"], input[type="date"], select, textarea {
+  width: 100%; font: 400 13px/1.4 var(--f-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: var(--r); padding: 7px 8px; min-width: 0; }
+select { font-family: var(--f-ui); }
+textarea { min-height: 96px; resize: vertical; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: 500 12.5px/1 var(--f-ui); border-radius: var(--r); padding: 8px 10px; cursor: pointer; border: 1px solid var(--rule); background: var(--card); color: var(--ink); }
+button:hover { border-color: var(--ink-3); }
+button.chip { padding: 6px 9px; }
+button.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+button.icon { padding: 6px 8px; font-family: var(--f-mono); }
+button:disabled { opacity: .35; cursor: default; }
+.check { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; font-size: 13px; cursor: pointer; }
+.check input { margin: 2px 0 0; accent-color: var(--accent); }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; width: max-content; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.crit { color: var(--crit); background: var(--crit-soft); }
+.alert { border-left: 3px solid var(--crit); background: var(--crit-soft); padding: 10px 12px; border-radius: 0 var(--r) var(--r) 0; font-size: 13px; display: grid; gap: 4px; }
+.alert.warn { border-color: var(--warn); background: var(--warn-soft); }
+.alert:empty { display: none; }
+
+.years { display: grid; gap: 12px; }
+.year { border: 1px solid var(--rule); border-radius: var(--r); background: var(--card); overflow: hidden; }
+.year > .yh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--rule); background: var(--tint); }
+.year > .yh b { font-family: var(--f-display); font-size: 17px; font-weight: 600; }
+.cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 640px) { .cells { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cells > div { padding: 12px 14px; display: grid; gap: 3px; margin: 0 -1px -1px 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); min-width: 0; }
+.cells .v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 17px; overflow-wrap: anywhere; }
+.cells .n { font-size: 12px; color: var(--ink-2); }
+.compare { border-left: 3px solid var(--warn); padding: 12px 14px; background: var(--warn-soft); border-radius: 0 var(--r) var(--r) 0; display: grid; gap: 6px; font-size: 13px; }
+.compare.same { border-color: var(--rule); background: var(--tint); }
+.bars { display: grid; gap: 6px; }
+.bar { display: grid; grid-template-columns: 150px minmax(0, 1fr) 120px 150px; gap: 10px; align-items: center; font-size: 12.5px; }
+@media (max-width: 560px) { .bar { grid-template-columns: 96px minmax(0, 1fr) 76px; } .bar .acb { grid-column: 2 / -1; text-align: right; margin-top: -4px; color: var(--ink-3); } }
+th.src, td.src { background-clip: padding-box; } th.src { color: var(--accent); } td.src.hit { font-weight: 500; color: var(--ink); } td.src { color: var(--ink-3); }
+th.grp { text-align: center; border-bottom: 1px solid var(--rule); }
+.bar .track { height: 10px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--accent); }
+.bar .fill.alt { background: var(--warn); }
+.bar .num { text-align: right; }
+
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--r); background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; vertical-align: middle; }
+th { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); background: var(--tint); position: sticky; top: 0; }
+td.r, th.r { text-align: right; }
+td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.edit td { padding: 5px 6px; }
+.edit input, .edit select { padding: 6px 7px; font-size: 12.5px; }
+.edit .w-date { width: 150px; } .edit .w-type { width: 118px; } .edit .w-ex { width: 150px; } .edit .w-num { width: 124px; } .edit .w-fee { width: 96px; }
+.edit tr.bad td { background: var(--crit-soft); }
+tbody tr.jr { cursor: pointer; }
+tbody tr.jr:hover td { background: var(--tint); }
+tbody tr.jr.open td { background: var(--accent-soft); }
+tr.jr td:first-child::before { content: "▸"; display: inline-block; width: 14px; color: var(--ink-3); transition: transform .15s; }
+tr.jr.open td:first-child::before { transform: rotate(90deg); }
+tr.detail td { white-space: normal; background: var(--bg); padding: 12px 16px 14px 34px; }
+.work { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 16px; font-size: 12.5px; align-items: baseline; max-width: 900px; }
+tr.detail .work { position: sticky; left: 0; max-width: min(900px, calc(100vw - 124px)); }
+.work .k { color: var(--ink-3); }
+.work .f { font-family: var(--f-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.work .f b { font-weight: 500; }
+@media (max-width: 560px) { .work { grid-template-columns: minmax(0, 1fr); } }
+.tg { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; }
+.tg.buy { color: var(--accent); background: var(--accent-soft); }
+.tg.sell { color: var(--ink); background: var(--tint); }
+.tg.xfer { color: var(--ink-3); background: var(--tint); }
+.tg.sl { color: var(--warn); background: var(--warn-soft); }
+.gain { color: var(--ok); } .loss { color: var(--crit); }
+.uplift td { background: var(--warn-soft); font-size: 12.5px; }
+
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--f-mono); font-size: 11px; fill: var(--ink-3); }
+.chart .halo { paint-order: stroke; stroke: var(--card); stroke-width: 4px; stroke-linejoin: round; }
+.tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 6px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); white-space: nowrap; display: none; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); font-size: 13px; max-width: 86ch; }
+.notes b { color: var(--ink); font-weight: 600; }
+.sources { display: grid; gap: 4px; font-size: 12.5px; }
+.foot { color: var(--ink-3); font-size: 12px; max-width: 90ch; }
+.settings { display: grid; grid-template-columns: 110px repeat(2, minmax(140px, 1fr)) minmax(140px, 1.2fr) minmax(200px, 1.4fr); gap: 10px; align-items: end; }
+@media (max-width: 920px) { .settings { grid-template-columns: repeat(2, minmax(0, 1fr)); } .settings .sl-toggle { grid-column: 1 / -1; } }
+.sl-toggle { padding-bottom: 8px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 920px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.pair .bar { grid-template-columns: 100px minmax(0, 1fr) 64px 132px; }
+.bar.neg span:first-child, .bar.neg .num, .bar.neg .acb { color: var(--crit); }
+.bar .acb { white-space: normal; line-height: 1.3; }
+td.src.neg { color: var(--crit); font-weight: 500; }
+details.card > summary { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; color: var(--ink); }
+details.card > summary::-webkit-details-marker { display: none; }
+details.card > summary::before { content: "▸"; color: var(--ink-3); transition: transform .15s; }
+details.card[open] > summary::before { transform: rotate(90deg); }
+.h2like { font-family: var(--f-display); font-weight: 600; font-size: 19px; }
+details > summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="label">Canadian crypto tax · ITA s.47</div>
+    <h1>ACB Pool Calculator</h1>
+    <p class="sub">Bought the same coin on several exchanges and wallets? For Canadian tax it is one pool with one average cost, wherever the coins sit. Enter your trades to see the adjusted cost base, the gain or loss on every sale and any superficial loss, with every step shown.</p>
+  </header>
+
+  <div class="alert" id="err" role="alert"></div>
+
+  <section aria-labelledby="h-years" class="stack" style="gap:10px">
+    <h2 id="h-years">Result by tax year</h2>
+    <div class="years" id="years"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-trades">
+    <div class="head"><h2 id="h-trades">Your trades</h2>
+      <div class="presets" id="presets" aria-label="Start from an example">
+        <button type="button" class="chip" data-p="multi">Example: two exchanges and a wallet</button>
+        <button type="button" class="chip" data-p="sl">Example: loss and rebuy</button>
+        <button type="button" class="chip" data-p="blank">Blank</button>
+      </div>
+    </div>
+    <div class="settings">
+      <label class="field"><span>Coin</span><input type="text" id="coin" maxlength="12" spellcheck="false"></label>
+      <label class="field"><span>Units held before the first trade</span><input type="text" id="openQ" inputmode="decimal" spellcheck="false" placeholder="0"></label>
+      <label class="field"><span>Their total ACB, CAD</span><input type="text" id="openT" inputmode="decimal" spellcheck="false" placeholder="0"></label>
+      <label class="field"><span>Held on</span><input type="text" id="openEx" spellcheck="false" placeholder="e.g. Exchange A" list="exlist"></label>
+      <label class="check sl-toggle"><input type="checkbox" id="applySL" checked><span>Apply the superficial-loss rule (ITA s.54)</span></label>
+    </div>
+    <div class="scroll"><table class="edit">
+      <thead><tr><th>Date</th><th>Type</th><th>Exchange or wallet</th><th>To</th><th class="r">Units</th><th class="r">Cost or proceeds, CAD</th><th class="r">Fee, CAD</th><th></th></tr></thead>
+      <tbody id="trades"></tbody>
+    </table></div>
+    <datalist id="exlist"></datalist>
+    <div class="head"><div class="presets"><button type="button" id="addRow">Add a trade</button></div><span class="small muted">Dates sort automatically. Same-day rows keep the order you enter them. Nothing you enter leaves this browser.</span></div>
+    <details>
+      <summary>Paste trades from a spreadsheet</summary>
+      <div class="stack" style="gap:8px; margin-top:8px">
+        <p class="small muted">One trade per line, columns separated by commas or tabs: date (YYYY-MM-DD), type (buy, sell or transfer), exchange or wallet, units, CAD cost or proceeds, fee, and for transfers the destination. A header line is skipped. Pasted rows replace the list.</p>
+        <textarea id="paste" spellcheck="false" placeholder="2025-01-15, buy, Exchange A, 0.5, 50000, 75&#10;2025-05-02, transfer, Exchange A, 0.5, , , Cold wallet"></textarea>
+        <div><button type="button" id="doPaste">Replace the list with these rows</button> <span class="small muted" id="pasteMsg"></span></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="pair">
+    <section class="card" aria-labelledby="h-cmp">
+      <h2 id="h-cmp">One pool, not one per exchange</h2>
+      <div id="cmp"></div>
+    </section>
+    <section class="card" aria-labelledby="h-hold">
+      <h2 id="h-hold">Where the units are now</h2>
+      <p class="small muted" id="holdNote"></p>
+      <div class="bars" id="hold"></div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="h-journal">
+    <div class="head"><h2 id="h-journal">The working, trade by trade</h2><span class="small muted">Click a row to see the calculation.</span></div>
+    <div class="scroll"><table>
+      <thead id="jhead"></thead>
+      <tbody id="journal"></tbody>
+    </table></div>
+  </section>
+
+  <details class="card chart" id="chartBox">
+    <summary><span class="h2like">ACB per unit over time</span> <span class="small muted">The average moves only when you buy or when a denied loss is added. Sales leave it unchanged.</span></summary>
+    <div id="chart" style="position:relative"></div>
+  </details>
+
+  <section class="card notes" aria-labelledby="h-notes">
+    <h2 id="h-notes">What the calculator assumes</h2>
+    <ul>
+      <li><b>One pool per coin.</b> All units of the same coin are identical property, wherever they are held, so they share one average cost (ITA s.47, IT-387R2). An exchange's own tax report can only see its own trades.</li>
+      <li><b>Moving coins between your own accounts changes nothing.</b> A transfer is not a sale and does not change the ACB. Network fees paid in the coin itself are a small disposition the calculator does not model; enter them as a sale if they matter.</li>
+      <li><b>Fees.</b> A purchase fee is added to the cost. A selling fee is an outlay that reduces the gain.</li>
+      <li><b>Amounts are in Canadian dollars</b> on the day of each trade. Crypto-to-crypto trades are a sale of one coin and a purchase of the other at fair market value; enter each coin in its own calculator.</li>
+      <li><b>Superficial losses.</b> A loss is tested against every purchase from 30 days before to 30 days after the sale, on any exchange. The denied part is added to the pool's ACB once the 30 days have passed, so later sales use the higher cost. Purchases by a spouse or a corporation you control also count but are not modelled.</li>
+      <li><b>Capital, not business income.</b> If you trade as a business, gains are fully taxable income and the superficial-loss rule does not apply.</li>
+      <li><b>Half of a net capital gain is taxable</b> (ITA s.38). A net capital loss can be carried back three years or forward indefinitely against taxable capital gains (ITA s.111).</li>
+      <li><b>Same engine as TaxLedger.</b> The arithmetic matches TaxLedger's engine to the cent on 512 test runs, 4,110 trades and 264 superficial-loss events.</li>
+    </ul>
+  </section>
+  <section class="card" aria-labelledby="h-src">
+    <h2 id="h-src">Sources</h2>
+    <div class="sources">
+      <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-47.html" target="_blank" rel="noopener">Income Tax Act, R.S.C. 1985, c. 1 (5th Supp.), s.47: identical properties and average cost</a>
+      <a href="https://taxinterpretations.com/cra/it-bulletins/it387r2" target="_blank" rel="noopener">CRA Interpretation Bulletin IT-387R2, "Meaning of Identical Properties"</a>
+      <a href="https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/compliance/digital-currency/cryptocurrency-guide.html" target="_blank" rel="noopener">CRA, "Information for crypto-asset users and tax professionals"</a>
+      <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-54.html" target="_blank" rel="noopener">Income Tax Act, s.54: "superficial loss"</a>
+      <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-53.html" target="_blank" rel="noopener">Income Tax Act, s.53(1)(f): denied loss added to cost</a>
+      <a href="https://taxinterpretations.com/cra/severed-letters/2004-0073011E5" target="_blank" rel="noopener">CRA Technical Interpretation 2004-0073011E5: the partial superficial-loss formula</a>
+      <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-38.html" target="_blank" rel="noopener">Income Tax Act, s.38: taxable capital gain is one half</a>
+      <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-111.html" target="_blank" rel="noopener">Income Tax Act, s.111: carrying net capital losses back and forward</a>
+    </div>
+  </section>
+  <p class="foot">General information, not tax advice. Check the result against your records before filing. <a href="../">More calculators</a></p>
+</div>
+
+<script>/* Superficial-loss core: exact decimal arithmetic that reproduces the TaxLedger engine
+   (taxledger/engine/superficial_loss.py) digit for digit, including Python Decimal's
+   28-significant-digit context and ROUND_HALF_EVEN quantize to 8 places. */
+(function (root) {
+  "use strict";
+  var TEN = 10n, PREC = 28, Q = 8;
+
+  function pow10(k) { return TEN ** BigInt(k); }
+  function abs(x) { return x < 0n ? -x : x; }
+
+  // "12.3400" -> { n: 123400n, s: 4 }
+  function parse(str) {
+    var t = String(str).trim().replace(/[,\s_$]/g, "");
+    if (!/^-?\d*\.?\d+$|^-?\d+\.$/.test(t)) return null;
+    var neg = t[0] === "-"; if (neg) t = t.slice(1);
+    var parts = t.split("."), frac = parts[1] || "";
+    var n = BigInt((parts[0] || "0") + frac);
+    return { n: neg ? -n : n, s: frac.length };
+  }
+  function fromInt(i) { return { n: BigInt(i), s: 0 }; }
+  function align(a, b) { var s = Math.max(a.s, b.s); return [a.n * pow10(s - a.s), b.n * pow10(s - b.s), s]; }
+  function add(a, b) { var x = align(a, b); return { n: x[0] + x[1], s: x[2] }; }
+  function sub(a, b) { var x = align(a, b); return { n: x[0] - x[1], s: x[2] }; }
+  function cmp(a, b) { var x = align(a, b); return x[0] < x[1] ? -1 : x[0] > x[1] ? 1 : 0; }
+  function min3(a, b, c) { var m = cmp(a, b) <= 0 ? a : b; return cmp(m, c) <= 0 ? m : c; }
+  function isPos(a) { return a.n > 0n; }
+
+  // round num/den (den > 0) to an integer, half to even
+  function divHalfEven(num, den) {
+    var neg = num < 0n, a = abs(num), q = a / den, r = a - q * den, twice = 2n * r;
+    if (twice > den || (twice === den && (q & 1n) === 1n)) q += 1n;
+    return neg ? -q : q;
+  }
+  // exact rational num/den rounded to PREC significant digits (Python's default context)
+  function ratSig(num, den) {
+    if (num === 0n) return { n: 0n, s: 0 };
+    var a = abs(num), e = a.toString().length - den.toString().length;
+    // find e with 10^e <= a/den < 10^(e+1)
+    var lhs = function (k) { return k >= 0 ? den * pow10(k) : den; }, rhs = function (k) { return k >= 0 ? a : a * pow10(-k); };
+    if (rhs(e) < lhs(e)) e -= 1;
+    var k = PREC - 1 - e; // scale so the result has PREC digits
+    var n = k >= 0 ? divHalfEven(num * pow10(k), den) : divHalfEven(num, den * pow10(-k));
+    if (abs(n).toString().length > PREC) { n = divHalfEven(n, TEN); k -= 1; } // carry 9.99.. -> 10.0
+    return k >= 0 ? { n: n, s: k } : { n: n * pow10(-k), s: 0 };
+  }
+  function quantize(a, places) {
+    if (a.s <= places) return { n: a.n * pow10(places - a.s), s: places };
+    return { n: divHalfEven(a.n, pow10(a.s - places)), s: places };
+  }
+  function quantizeHalfUp(a, places) {
+    if (a.s <= places) return { n: a.n * pow10(places - a.s), s: places };
+    var d = pow10(a.s - places), neg = a.n < 0n, m = abs(a.n), q = m / d, r = m - q * d;
+    if (2n * r >= d) q += 1n;
+    return { n: neg ? -q : q, s: places };
+  }
+  // Python Decimal add/sub round to the 28-digit context too
+  function addC(a, b) { var x = add(a, b); return ratSig(x.n, pow10(x.s)); }
+  function subC(a, b) { var x = sub(a, b); return ratSig(x.n, pow10(x.s)); }
+  function div(a, b) { return ratSig(a.n * pow10(b.s), b.n * pow10(a.s)); }
+  function mul(a, b) { return ratSig(a.n * b.n, pow10(a.s + b.s)); }
+
+  function toStr(a, places) {
+    var x = places === undefined ? a : quantize(a, places), neg = x.n < 0n, d = abs(x.n).toString();
+    if (x.s === 0) return (neg ? "-" : "") + d;
+    while (d.length <= x.s) d = "0" + d;
+    return (neg ? "-" : "") + d.slice(0, d.length - x.s) + "." + d.slice(d.length - x.s);
+  }
+  function toNum(a) { return Number(toStr(a)); }
+
+  /* Dates as YYYY-MM-DD, compared in UTC days. */
+  function dayNum(d) { var p = d.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 864e5; }
+  function dayStr(n) { return new Date(n * 864e5).toISOString().slice(0, 10); }
+
+  /*
+    SL = min(S, P, B) / S x L   (CRA TI 2004-0073011E5)
+    sale: { date, S, L, B }  acquisitions: [{ date, qty }]
+    Mirrors detect_superficial_losses: closed window [date-30, date+30].
+  */
+  function detect(sale, acquisitions, windowDays) {
+    var W = windowDays === undefined ? 30 : windowDays;
+    var d = dayNum(sale.date), start = d - W, end = d + W;
+    var P = fromInt(0), inWindow = [];
+    acquisitions.forEach(function (a, i) {
+      var t = dayNum(a.date), inside = t >= start && t <= end;
+      inWindow.push(inside);
+      if (inside) P = add(P, a.qty);
+    });
+    var res = { windowStart: dayStr(start), windowEnd: dayStr(end), P: P, inWindow: inWindow, applies: false };
+    if (!isPos(sale.L)) { res.reason = "gain"; return res; }
+    if (!isPos(P)) { res.reason = "no-repurchase"; return res; }
+    if (!isPos(sale.B)) { res.reason = "none-held"; return res; }
+    var m = min3(sale.S, P, sale.B);
+    var fraction = quantize(div(m, sale.S), Q);
+    var denied = quantize(mul(fraction, sale.L), Q);
+    if (cmp(denied, sale.L) > 0) denied = sale.L;
+    var allowable = quantize(sub(sale.L, denied), Q);
+    res.applies = true; res.min = m; res.fraction = fraction; res.denied = denied; res.allowable = allowable;
+    return res;
+  }
+
+  root.SL = { parse: parse, addC: addC, subC: subC, quantizeHalfUp: quantizeHalfUp, add: add, sub: sub, mul: mul, div: div, cmp: cmp, quantize: quantize, toStr: toStr, toNum: toNum,
+    fromInt: fromInt, detect: detect, dayNum: dayNum, dayStr: dayStr, min3: min3 };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>/* ACB pool replay for one coin across exchanges and wallets (ITA s.47 identical-property pooling).
+   Mirrors TaxLedger: engine apply_acquisition / apply_disposition, pool_service's fee contract
+   (buy cost = amount + fee; sell gain = proceeds - ACB used - fee) and the W7F1 superficial-loss
+   cascade (loss enqueued at sale date + 30, crystallised before the first row dated after that day,
+   B = pool balance at that moment, denied amount added to the pool's ACB). Needs SL from slcore.js. */
+(function (root) {
+  "use strict";
+  var SL = root.SL, Z = SL.fromInt(0);
+  function pos(a) { return SL.cmp(a, Z) > 0; }
+
+  /* rows: [{date, kind: "buy"|"sell"|"xfer", ex, to, qty, amount, fee}] with Decimal objects from SL.parse.
+     opening: {qty, acb} or null (not an acquisition for the 30-day test). */
+  function replay(rows, opts) {
+    opts = opts || {};
+    var applySL = opts.applySL !== false;
+    var q = Z, T = Z;
+    if (opts.opening && pos(opts.opening.qty)) { q = opts.opening.qty; T = opts.opening.acb; }
+    var order = rows.map(function (_, i) { return i; }).sort(function (a, b) { return rows[a].date < rows[b].date ? -1 : rows[a].date > rows[b].date ? 1 : a - b; });
+    var acqs = order.filter(function (i) { return rows[i].kind === "buy"; }).map(function (i) { return { date: rows[i].date, qty: rows[i].qty }; });
+    var out = rows.map(function () { return null; }), pending = [], uplifts = [];
+
+    function crystallise(cur) {
+      var due = pending.filter(function (p) { return cur === null || p.close < cur; });
+      due.sort(function (a, b) { return a.close < b.close ? -1 : a.close > b.close ? 1 : a.idx - b.idx; });
+      due.forEach(function (p) {
+        pending.splice(pending.indexOf(p), 1);
+        var r = SL.detect({ date: p.date, S: p.S, L: p.L, B: q }, acqs);
+        if (r.applies) {
+          var before = T;
+          T = SL.addC(T, r.denied);
+          out[p.idx].sl = { close: p.close, P: r.P, B: q, fraction: r.fraction, min: r.min, denied: r.denied, allowable: r.allowable, L: p.L,
+            windowStart: r.windowStart, windowEnd: r.windowEnd };
+          uplifts.push({ date: p.close, idx: p.idx, denied: r.denied, q: q, Tbefore: before, Tafter: T });
+        } else if (out[p.idx]) {
+          out[p.idx].slChecked = { close: p.close, reason: r.reason, P: r.P, B: q };
+        }
+      });
+    }
+
+    for (var k = 0; k < order.length; k++) {
+      var i = order[k], r = rows[i], fee = r.fee || Z;
+      if (applySL) crystallise(r.date);
+      var avgIn = pos(q) ? SL.div(T, q) : Z; // PoolState.from_components
+      if (r.kind === "buy") {
+        var cost = SL.addC(r.amount, fee);
+        q = SL.addC(q, r.qty); T = SL.addC(T, cost);
+        out[i] = { kind: "buy", cost: cost, q: q, T: T, avg: SL.div(T, q) };
+      } else if (r.kind === "sell") {
+        if (SL.cmp(r.qty, q) > 0) return { error: "insufficient", at: i, held: q, rows: out, uplifts: uplifts };
+        var used = SL.mul(avgIn, r.qty);
+        var gain = SL.subC(SL.subC(r.amount, used), fee);
+        q = SL.subC(q, r.qty);
+        T = pos(q) ? SL.subC(T, used) : Z;
+        out[i] = { kind: "sell", avg: avgIn, used: used, gain: gain, q: q, T: T };
+        if (applySL && SL.cmp(gain, Z) < 0) {
+          pending.push({ idx: i, date: r.date, close: SL.dayStr(SL.dayNum(r.date) + 30), S: r.qty, L: SL.quantizeHalfUp(SL.sub(Z, gain), 8) });
+        }
+      } else {
+        out[i] = { kind: "xfer", q: q, T: T, avg: avgIn };
+      }
+    }
+    if (applySL) crystallise(null);
+    return { rows: out, final: { q: q, T: T }, uplifts: uplifts, order: order };
+  }
+
+  /* The common mistake: a separate average cost per exchange. Transfers carry the sender's average cost. */
+  function perExchange(rows, opts) {
+    var pools = {}, gain = Z, gains = rows.map(function () { return null; });
+    var order = rows.map(function (_, i) { return i; }).sort(function (a, b) { return rows[a].date < rows[b].date ? -1 : rows[a].date > rows[b].date ? 1 : a - b; });
+    function P(ex) { return pools[ex] || (pools[ex] = { q: Z, T: Z }); }
+    if (opts && opts.opening && pos(opts.opening.qty)) { var o = P(opts.opening.ex || "?"); o.q = opts.opening.qty; o.T = opts.opening.acb; }
+    for (var k = 0; k < order.length; k++) {
+      var i = order[k], r = rows[i], fee = r.fee || Z, p = P(r.ex);
+      if (r.kind === "buy") { p.q = SL.addC(p.q, r.qty); p.T = SL.addC(p.T, SL.addC(r.amount, fee)); continue; }
+      if (SL.cmp(r.qty, p.q) > 0) return { error: "short", at: i, ex: r.ex };
+      var used = SL.mul(SL.div(p.T, p.q), r.qty);
+      p.q = SL.subC(p.q, r.qty); p.T = pos(p.q) ? SL.subC(p.T, used) : Z;
+      if (r.kind === "sell") { var g = SL.subC(SL.subC(r.amount, used), fee); gains[i] = g; gain = SL.addC(gain, g); }
+      else { var t = P(r.to); t.q = SL.addC(t.q, r.qty); t.T = SL.addC(t.T, used); }
+    }
+    return { gain: gain, gains: gains, pools: pools };
+  }
+
+  /* Units on each exchange or wallet after every row (transfers move units, never cost).
+     snaps[i] = balances after row i; sources in order of first appearance. */
+  function holdings(rows, opts) {
+    var h = {}, warn = [], snaps = rows.map(function () { return null; }), sources = [], opening = null;
+    function seen(k) { if (sources.indexOf(k) < 0) sources.push(k); }
+    if (opts && opts.opening && pos(opts.opening.qty)) { var k0 = opts.opening.ex || "?"; seen(k0); h[k0] = opts.opening.qty; opening = Object.assign({}, h); }
+    var order = rows.map(function (_, i) { return i; }).sort(function (a, b) { return rows[a].date < rows[b].date ? -1 : rows[a].date > rows[b].date ? 1 : a - b; });
+    order.forEach(function (i) {
+      var r = rows[i], cur = h[r.ex] || Z;
+      seen(r.ex);
+      if (r.kind === "buy") h[r.ex] = SL.add(cur, r.qty);
+      else {
+        h[r.ex] = SL.sub(cur, r.qty);
+        if (SL.cmp(h[r.ex], Z) < 0) warn.push(i);
+        if (r.kind === "xfer") { seen(r.to); h[r.to] = SL.add(h[r.to] || Z, r.qty); }
+      }
+      snaps[i] = Object.assign({}, h);
+    });
+    return { h: h, warn: warn, snaps: snaps, sources: sources, opening: opening };
+  }
+
+  root.ACB = { replay: replay, perExchange: perExchange, holdings: holdings };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var Z = SL.fromInt(0);
+  var PRESETS = {
+    multi: { coin: "BTC", openQ: "", openT: "", openEx: "", rows: [
+      ["2025-01-15", "buy", "Exchange A", "", "0.5", "50000", "75"],
+      ["2025-04-10", "buy", "Exchange B", "", "0.3", "39000", "60"],
+      ["2025-05-02", "xfer", "Exchange A", "Cold wallet", "0.5", "", ""],
+      ["2025-08-20", "buy", "Exchange B", "", "0.2", "31000", "45"],
+      ["2025-11-05", "sell", "Exchange B", "", "0.4", "60000", "90"]] },
+    sl: { coin: "ETH", openQ: "", openT: "", openEx: "", rows: [
+      ["2025-02-03", "buy", "Exchange A", "", "10", "45000", "50"],
+      ["2025-04-07", "sell", "Exchange A", "", "6", "15600", "20"],
+      ["2025-04-21", "buy", "Exchange B", "", "4", "9600", "15"],
+      ["2025-05-01", "xfer", "Exchange A", "Exchange B", "4", "", ""],
+      ["2025-06-16", "sell", "Exchange B", "", "8", "28000", "30"]] },
+    blank: { coin: "", openQ: "", openT: "", openEx: "", rows: [["", "buy", "", "", "", "", ""]] }
+  };
+  var rows = [];
+  var openRows = {};
+
+  /* formatting */
+  function trim(s) { if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, ""); return s === "-0" ? "0" : s; }
+  function units(x) { if (!x) return "—"; var s = trim(SL.toStr(SL.quantizeHalfUp(x, 18))); var neg = s[0] === "-"; if (neg) s = s.slice(1); var p = s.split("."); return (neg ? "−" : "") + Number(p[0]).toLocaleString("en-CA") + (p[1] ? "." + p[1] : ""); }
+  function cad(x) { if (!x) return "—"; var v = Number(SL.toStr(SL.quantizeHalfUp(x, 2))); return (v < 0 ? "−" : "") + Math.abs(v).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function exact(x, dp) { return trim(SL.toStr(SL.quantizeHalfUp(x, dp === undefined ? 8 : dp))); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function fmtDate(d) { return d; }
+
+  function load(name) {
+    var p = PRESETS[name];
+    $("coin").value = p.coin; $("openQ").value = p.openQ; $("openT").value = p.openT; $("openEx").value = p.openEx;
+    rows = p.rows.map(function (r) { return { date: r[0], kind: r[1], ex: r[2], to: r[3], qty: r[4], amount: r[5], fee: r[6] }; });
+    openRows = {};
+    document.querySelectorAll("#presets .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.p === name ? "true" : "false"); });
+    renderEditor(); calc();
+  }
+  function clearPreset() { document.querySelectorAll("#presets .chip").forEach(function (b) { b.setAttribute("aria-pressed", "false"); }); }
+
+  function renderEditor() {
+    $("trades").innerHTML = rows.map(function (r, i) {
+      var amtPh = r.kind === "sell" ? "proceeds" : r.kind === "buy" ? "cost" : "";
+      return '<tr data-i="' + i + '">' +
+        '<td><input class="w-date" type="date" aria-label="Trade ' + (i + 1) + ' date" data-k="date" value="' + esc(r.date) + '"></td>' +
+        '<td><select class="w-type" aria-label="Trade ' + (i + 1) + ' type" data-k="kind">' +
+          ['buy', 'sell', 'xfer'].map(function (k) { return '<option value="' + k + '"' + (r.kind === k ? " selected" : "") + ">" + { buy: "Buy", sell: "Sell", xfer: "Transfer" }[k] + "</option>"; }).join("") + "</select></td>" +
+        '<td><input class="w-ex" type="text" list="exlist" spellcheck="false" aria-label="Trade ' + (i + 1) + ' exchange or wallet" data-k="ex" value="' + esc(r.ex) + '"></td>' +
+        '<td><input class="w-ex" type="text" list="exlist" spellcheck="false" aria-label="Trade ' + (i + 1) + ' destination" data-k="to" value="' + esc(r.to) + '"' + (r.kind === "xfer" ? "" : " disabled placeholder=\"—\"") + "></td>" +
+        '<td><input class="w-num" type="text" inputmode="decimal" spellcheck="false" aria-label="Trade ' + (i + 1) + ' units" data-k="qty" value="' + esc(r.qty) + '" style="text-align:right"></td>' +
+        '<td><input class="w-num" type="text" inputmode="decimal" spellcheck="false" aria-label="Trade ' + (i + 1) + ' CAD amount" data-k="amount" placeholder="' + amtPh + '" value="' + esc(r.kind === "xfer" ? "" : r.amount) + '"' + (r.kind === "xfer" ? " disabled" : "") + ' style="text-align:right"></td>' +
+        '<td><input class="w-fee" type="text" inputmode="decimal" spellcheck="false" aria-label="Trade ' + (i + 1) + ' fee" data-k="fee" placeholder="0" value="' + esc(r.kind === "xfer" ? "" : r.fee) + '"' + (r.kind === "xfer" ? " disabled" : "") + ' style="text-align:right"></td>' +
+        '<td style="white-space:nowrap"><button type="button" class="icon" data-up="' + i + '" aria-label="Move trade ' + (i + 1) + ' up"' + (i === 0 ? " disabled" : "") + '>↑</button> <button type="button" class="icon" data-del="' + i + '" aria-label="Remove trade ' + (i + 1) + '">×</button></td></tr>';
+    }).join("");
+    updateList();
+  }
+  function updateList() {
+    var names = {}; rows.forEach(function (r) { if (r.ex) names[r.ex] = 1; if (r.to) names[r.to] = 1; });
+    if ($("openEx").value) names[$("openEx").value] = 1;
+    $("exlist").innerHTML = Object.keys(names).map(function (n) { return '<option value="' + esc(n) + '">'; }).join("");
+  }
+
+  /* read inputs → parsed rows (skipping incomplete ones) */
+  function parsed() {
+    var out = [], idx = [], problems = [];
+    rows.forEach(function (r, i) {
+      var empty = !r.date && !r.qty && !r.amount;
+      if (empty) return;
+      var q = SL.parse(r.qty), a = r.kind === "xfer" ? Z : SL.parse(r.amount), f = r.kind === "xfer" || !String(r.fee || "").trim() ? Z : SL.parse(r.fee);
+      var why = !r.date ? "a date" : !q || SL.cmp(q, Z) <= 0 ? "units above zero" : !a || SL.cmp(a, Z) < 0 ? "a CAD amount" : !f || SL.cmp(f, Z) < 0 ? "a valid fee" : !String(r.ex || "").trim() ? "an exchange or wallet" : r.kind === "xfer" && !String(r.to || "").trim() ? "a destination" : "";
+      if (why) { problems.push({ i: i, why: why }); return; }
+      out.push({ date: r.date, kind: r.kind, ex: r.ex.trim(), to: (r.to || "").trim(), qty: q, amount: a, fee: f }); idx.push(i);
+    });
+    return { rows: out, idx: idx, problems: problems };
+  }
+
+  var last = null;
+  function calc() {
+    var coin = ($("coin").value.trim() || "units").toUpperCase();
+    var p = parsed();
+    var oq = $("openQ").value.trim() ? SL.parse($("openQ").value) : Z, ot = $("openT").value.trim() ? SL.parse($("openT").value) : Z;
+    var msgs = [];
+    if (!oq || !ot) { msgs.push("The opening units and ACB must be numbers."); oq = Z; ot = Z; }
+    var opening = SL.cmp(oq, Z) > 0 ? { qty: oq, acb: ot, ex: $("openEx").value.trim() || "Opening" } : null;
+    document.querySelectorAll("#trades tr").forEach(function (tr) { tr.classList.remove("bad"); });
+    p.problems.forEach(function (x) { var tr = document.querySelector('#trades tr[data-i="' + x.i + '"]'); if (tr) tr.classList.add("bad"); });
+    if (p.problems.length) msgs.push("Trade " + p.problems.map(function (x) { return (x.i + 1) + " needs " + x.why; }).join("; ") + ". Incomplete trades are left out until fixed.");
+
+    var res = ACB.replay(p.rows, { applySL: $("applySL").checked, opening: opening });
+    if (res.error) {
+      var r = p.rows[res.at];
+      msgs.unshift("On " + r.date + " you sell " + units(r.qty) + " " + esc(coin) + ", but across all your exchanges and wallets the pool holds only " + units(res.held) + ". Add the missing purchase or the units held before the first trade.");
+      var tr = document.querySelector('#trades tr[data-i="' + p.idx[res.at] + '"]'); if (tr) tr.classList.add("bad");
+    }
+    var hold = ACB.holdings(p.rows, { opening: opening });
+    var warnEx = hold.warn.map(function (i) { return p.rows[i]; });
+    var errBox = $("err");
+    errBox.className = "alert" + (res.error ? "" : " warn");
+    errBox.innerHTML = msgs.map(function (m) { return "<p>" + m + "</p>"; }).join("") +
+      (warnEx.length && !res.error ? "<p>" + esc(warnEx[0].ex) + " goes below zero on " + warnEx[0].date + ". " +
+        (p.rows.some(function (r) { return r.kind === "xfer" && r.to === warnEx[0].ex && r.date === warnEx[0].date; })
+          ? "A transfer into it on the same day comes later in the list. If it happened first, move it up with the ↑ button."
+          : "A transfer into it may be missing.") + " This does not change the ACB, which is pooled, but check the list.</p>" : "");
+    last = { p: p, res: res, coin: coin, opening: opening, hold: hold };
+    if (res.error) { $("years").innerHTML = '<span class="pill crit">Cannot calculate</span>'; $("cmp").innerHTML = ""; $("journal").innerHTML = ""; $("chart").innerHTML = ""; renderHoldings(hold, coin, null); return; }
+    renderYears(p, res, coin);
+    renderCompare(p, res, coin, opening);
+    renderHoldings(hold, coin, res.final);
+    renderJournal(p, res, coin, opening);
+    renderChart(p, res, coin, opening);
+  }
+
+  function yearTotals(p, res) {
+    var Y = {};
+    p.rows.forEach(function (r, i) {
+      var o = res.rows[i]; if (!o || o.kind !== "sell") return;
+      var y = r.date.slice(0, 4), t = Y[y] || (Y[y] = { gains: Z, losses: Z, denied: Z, proceeds: Z, sales: 0 });
+      var reported = o.sl ? SL.add(o.gain, o.sl.denied) : o.gain;
+      if (SL.cmp(reported, Z) >= 0) t.gains = SL.add(t.gains, reported); else t.losses = SL.add(t.losses, reported);
+      if (o.sl) t.denied = SL.add(t.denied, o.sl.denied);
+      t.proceeds = SL.add(t.proceeds, r.amount); t.sales++;
+    });
+    return Y;
+  }
+  function renderYears(p, res, coin) {
+    var Y = yearTotals(p, res), ys = Object.keys(Y).sort();
+    if (!ys.length) { $("years").innerHTML = '<p class="muted">No sales yet. Add a sale to see a gain or loss.</p>'; return; }
+    $("years").innerHTML = ys.map(function (y) {
+      var t = Y[y], net = SL.add(t.gains, t.losses), pos = SL.cmp(net, Z) >= 0;
+      var half = SL.div(net, SL.fromInt(2));
+      var pill = pos ? '<span class="pill warn">Net capital gain</span>' : '<span class="pill ok">Net capital loss</span>';
+      return '<div class="year"><div class="yh"><b>' + y + "</b>" + pill + '</div><div class="cells">' +
+        cell("Gains", cad(t.gains), t.sales + (t.sales === 1 ? " sale" : " sales") + ", proceeds " + cad(t.proceeds)) +
+        cell("Losses you can claim", cad(t.losses), SL.cmp(t.denied, Z) > 0 ? cad(t.denied) + " denied as superficial" : "No superficial losses") +
+        cell("Net", cad(net), pos ? "Schedule 3 total" : "Carry back 3 years or forward") +
+        cell(pos ? "Taxable, one half" : "Net capital loss, one half", cad(pos ? half : SL.sub(Z, half)), pos ? "Goes on line 12700" : "Allowable against taxable gains") +
+        "</div></div>";
+    }).join("");
+  }
+  function cell(l, v, n) { return '<div><div class="label">' + l + '</div><div class="v">' + v + '</div><div class="n">' + n + "</div></div>"; }
+
+  function renderCompare(p, res, coin, opening) {
+    var sells = p.rows.filter(function (r) { return r.kind === "sell"; }).length;
+    if (!sells) { $("cmp").innerHTML = '<p class="muted small">Once you add a sale, this compares the pooled result with a separate average cost on each exchange.</p>'; return; }
+    // like for like: both without the superficial-loss rule
+    var base = ACB.replay(p.rows, { applySL: false, opening: opening }), pooled = Z;
+    base.rows.forEach(function (o) { if (o && o.kind === "sell") pooled = SL.add(pooled, o.gain); });
+    var pe = ACB.perExchange(p.rows, { opening: opening });
+    if (pe.error) {
+      var r = p.rows[pe.at];
+      $("cmp").innerHTML = '<div class="compare same"><p>A separate cost per exchange cannot even be calculated here: on ' + r.date + ", " + esc(r.ex) + " sends or sells more " + esc(coin) + " than it ever received there. That usually means a transfer is missing from the list. The pooled ACB is unaffected, because all units share one cost.</p></div>";
+      return;
+    }
+    var diff = SL.sub(pooled, pe.gain), same = SL.cmp(SL.quantizeHalfUp(diff, 2), Z) === 0;
+    var more = SL.cmp(diff, Z) > 0;
+    $("cmp").innerHTML = '<div class="compare' + (same ? " same" : "") + '">' +
+      '<div class="work"><div class="k">One pool, as the Act requires</div><div class="f"><b>' + cad(pooled) + "</b> CAD total gain or loss</div>" +
+      '<div class="k">A separate cost per exchange</div><div class="f">' + cad(pe.gain) + " CAD</div></div>" +
+      (same ? "<p>Here both give the same total. They differ as soon as one exchange sells while units bought at a different price sit elsewhere.</p>"
+        : "<p>Tracking each exchange on its own would " + (more ? "understate" : "overstate") + " the result by <b>" + cad(more ? diff : SL.sub(Z, diff)) + " CAD</b>. That is what you get by adding up each exchange's own tax report, because each exchange only sees the coins it bought. The calculation assumes transfers carry the sender's average cost, the most careful version of per-exchange tracking. Both figures are before the superficial-loss rule.</p>") +
+      "</div>";
+  }
+
+  function renderHoldings(hold, coin, fin) {
+    var ex = hold.sources.filter(function (k) { return hold.h[k] !== undefined; });
+    var total = Z; ex.forEach(function (k) { total = SL.add(total, hold.h[k]); });
+    if (!ex.length || SL.cmp(total, Z) === 0) { $("hold").innerHTML = '<p class="muted small">Nothing held after the last trade.</p>'; $("holdNote").textContent = ""; return; }
+    var max = Math.max.apply(null, ex.map(function (k) { return Math.abs(SL.toNum(hold.h[k])); }));
+    var avg = fin && SL.cmp(fin.q, Z) > 0 ? SL.div(fin.T, fin.q) : null;
+    $("holdNote").textContent = "Total " + units(total) + " " + coin + (avg ? ", ACB " + cad(fin.T) + " CAD at " + cad(avg) + " per unit" : "");
+    $("hold").innerHTML = ex.map(function (k) {
+      var v = SL.toNum(hold.h[k]), w = max > 0 ? Math.max(0, v) / max * 100 : 0;
+      var neg = SL.cmp(hold.h[k], Z) < 0;
+      var share = neg ? 'Below zero: transfer missing?' : avg ? "ACB " + cad(SL.mul(avg, hold.h[k])) : "";
+      return '<div class="bar' + (neg ? " neg" : "") + '"><span>' + esc(k) + '</span><div class="track"><div class="fill" style="width:' + w.toFixed(1) + '%"></div></div><span class="num">' + units(hold.h[k]) + '</span><span class="num small acb" style="text-align:right">' + share + "</span></div>";
+    }).join("") + (avg ? '<p class="small muted">ACB per source is the pool average times the units there. It is for reference only: the tax cost is the pool, not the exchange.</p>' : "");
+  }
+
+  function renderJournal(p, res, coin, opening) {
+    var hold = last.hold, src = hold.sources, n = src.length, cols = 9 + n;
+    $("jhead").innerHTML = (n ? '<tr><th colspan="5"></th><th class="grp" colspan="' + n + '">Units by source, after the trade</th><th colspan="4"></th></tr>' : "") +
+      '<tr><th>Date</th><th>Type</th><th>Where</th><th class="r">Units</th><th class="r">CAD</th>' +
+      src.map(function (k) { return '<th class="r src">' + esc(k) + "</th>"; }).join("") +
+      '<th class="r">Pool units</th><th class="r">Pool ACB</th><th class="r">ACB per unit</th><th class="r">Gain or loss</th></tr>';
+    function srcCells(snap, hit) {
+      return src.map(function (k) {
+        var v = snap && snap[k] !== undefined ? units(snap[k]) : "—", neg = snap && snap[k] !== undefined && SL.cmp(snap[k], Z) < 0;
+        return '<td class="num r src' + (hit.indexOf(k) >= 0 ? " hit" : "") + (neg ? " neg" : "") + '"' + (neg ? ' title="Below zero: a transfer into this source may be missing"' : "") + ">" + v + "</td>";
+      }).join("");
+    }
+    var h = "", prevSnap = hold.opening || {};
+    if (opening) h += '<tr><td class="num">—</td><td><span class="tg xfer">Opening</span></td><td>' + esc(opening.ex) + '</td><td class="num r">' + units(opening.qty) + '</td><td class="num r">' + cad(opening.acb) + "</td>" + srcCells(hold.opening, [opening.ex]) + '<td class="num r">' + units(opening.qty) + '</td><td class="num r">' + cad(opening.acb) + '</td><td class="num r">' + cad(SL.div(opening.acb, opening.qty)) + '</td><td class="r">—</td></tr>';
+    var upl = res.uplifts.slice();
+    res.order.forEach(function (i) {
+      var r = p.rows[i], o = res.rows[i];
+      while (upl.length && upl[0].date < r.date) h += upliftRow(upl.shift(), p, coin, srcCells(prevSnap, []));
+      var key = p.idx[i], open = !!openRows[key];
+      var tg = { buy: '<span class="tg buy">Buy</span>', sell: '<span class="tg sell">Sell</span>', xfer: '<span class="tg xfer">Transfer</span>' }[r.kind];
+      if (o.sl) tg += ' <span class="tg sl">Superficial</span>';
+      var where = r.kind === "xfer" ? esc(r.ex) + " → " + esc(r.to) : esc(r.ex);
+      var gl = o.kind === "sell" ? '<td class="num r ' + (SL.cmp(o.gain, Z) >= 0 ? "gain" : "loss") + '">' + cad(o.gain) + "</td>" : '<td class="r">—</td>';
+      var avgAfter = o.kind === "sell" ? (SL.cmp(o.q, Z) > 0 ? o.avg : Z) : (SL.cmp(o.q, Z) > 0 ? SL.div(o.T, o.q) : Z);
+      var snap = hold.snaps[i]; prevSnap = snap;
+      h += '<tr class="jr' + (open ? " open" : "") + '" data-k="' + key + '" tabindex="0" aria-expanded="' + open + '"><td class="num">' + r.date + "</td><td>" + tg + '</td><td style="white-space:normal;min-width:110px">' + where + '</td><td class="num r">' + units(r.qty) + '</td><td class="num r">' + (r.kind === "xfer" ? "—" : cad(r.amount)) + "</td>" +
+        srcCells(snap, r.kind === "xfer" ? [r.ex, r.to] : [r.ex]) +
+        '<td class="num r">' + units(o.q) + '</td><td class="num r">' + cad(o.T) + '</td><td class="num r">' + cad(avgAfter) + "</td>" + gl + "</tr>";
+      if (open) h += '<tr class="detail"><td colspan="' + cols + '">' + detail(r, o, coin) + "</td></tr>";
+    });
+    while (upl.length) h += upliftRow(upl.shift(), p, coin, srcCells(prevSnap, []));
+    $("journal").innerHTML = h;
+  }
+  function upliftRow(u, p, coin, cells) {
+    var r = p.rows[u.idx];
+    return '<tr class="uplift"><td class="num">' + u.date + '</td><td><span class="tg sl">Denied loss added</span></td><td colspan="3" style="white-space:normal;min-width:220px">Superficial loss on the ' + r.date + " sale, after its 30 days ended</td>" + cells +
+      '<td class="num r">' + units(u.q) + '</td><td class="num r">' + cad(u.Tafter) + '</td><td class="num r">' + cad(SL.div(u.Tafter, u.q)) + '</td><td class="num r">+' + cad(u.denied) + "</td></tr>";
+  }
+  function row(k, f) { return '<div class="k">' + k + '</div><div class="f">' + f + "</div>"; }
+  function detail(r, o, coin) {
+    var h = '<div class="work">';
+    if (r.kind === "buy") {
+      h += row("Cost", exact(r.amount) + " + fee " + exact(r.fee) + " = <b>" + cad(o.cost) + "</b> CAD");
+      h += row("Pool after", units(o.q) + " " + esc(coin) + ", ACB " + cad(o.T) + " CAD");
+      h += row("New average", cad(o.T) + " ÷ " + units(o.q) + " = <b>" + cad(o.avg) + "</b> CAD per " + esc(coin));
+    } else if (r.kind === "xfer") {
+      h += row("Effect", "None on the pool. " + units(r.qty) + " " + esc(coin) + " moved from " + esc(r.ex) + " to " + esc(r.to) + "; both are yours, so the cost stays " + cad(o.avg) + " CAD per unit.");
+    } else {
+      h += row("ACB per unit", "pool average before the sale: <b>" + cad(o.avg) + "</b> CAD");
+      h += row("ACB used", cad(o.avg) + " × " + units(r.qty) + " = <b>" + cad(o.used) + "</b> CAD");
+      h += row("Gain or loss", "proceeds " + cad(r.amount) + " − ACB " + cad(o.used) + " − fee " + cad(r.fee) + " = <b>" + cad(o.gain) + "</b> CAD");
+      h += row("Pool after", units(o.q) + " " + esc(coin) + ", ACB " + cad(o.T) + " CAD; the average does not change on a sale");
+      if (o.sl) {
+        var s = o.sl;
+        h += '<div class="k" style="grid-column:1/-1;border-top:1px solid var(--rule);padding-top:6px;margin-top:2px">Superficial loss (ITA s.54)</div>';
+        h += row("Window", s.windowStart + " to " + s.windowEnd);
+        h += row("S, P, B", "sold " + units(r.qty) + ", bought in window " + units(s.P) + ", held on " + s.windowEnd + ": " + units(s.B));
+        h += row("Denied", "min(S, P, B) ÷ S × L = " + units(s.min) + " ÷ " + units(r.qty) + " × " + cad(s.L) + " = " + exact(s.fraction) + " × " + cad(s.L) + " = <b>" + cad(s.denied) + "</b> CAD");
+        h += row("Claimable now", "<b>" + cad(s.allowable) + "</b> CAD; the denied " + cad(s.denied) + " is added to the pool's ACB on " + s.close);
+      } else if (o.slChecked) {
+        h += row("Superficial loss", o.slChecked.reason === "no-repurchase" ? "Not applied: no purchase from 30 days before to 30 days after the sale." : "Not applied: nothing held 30 days after the sale.");
+      }
+    }
+    return h + "</div>";
+  }
+
+  function renderChart(p, res, coin, opening) {
+    var pts = [];
+    if (opening) pts.push({ d: SL.dayNum(p.rows.length ? p.rows[res.order[0]].date : "2025-01-01") - 1, v: SL.toNum(SL.div(opening.acb, opening.qty)), q: opening.qty });
+    var upl = res.uplifts.slice(), sales = [];
+    res.order.forEach(function (i) {
+      var r = p.rows[i], o = res.rows[i], d = SL.dayNum(r.date);
+      while (upl.length && upl[0].date < r.date) { var u = upl.shift(); pts.push({ d: SL.dayNum(u.date), v: SL.toNum(SL.div(u.Tafter, u.q)), tag: "Denied loss added" }); }
+      if (o.kind === "buy") pts.push({ d: d, v: SL.toNum(o.avg), tag: "Buy " + units(r.qty) });
+      if (o.kind === "sell") { sales.push({ d: d, v: SL.toNum(o.avg), gain: o.gain, r: r }); if (SL.cmp(o.q, Z) === 0) pts.push({ d: d, v: null, tag: "Pool emptied" }); }
+    });
+    while (upl.length) { var u2 = upl.shift(); pts.push({ d: SL.dayNum(u2.date), v: SL.toNum(SL.div(u2.Tafter, u2.q)), tag: "Denied loss added" }); }
+    if (!pts.length) { $("chart").innerHTML = '<p class="muted small">Add a purchase to see the average cost.</p>'; return; }
+    var all = pts.map(function (x) { return x.d; }).concat(sales.map(function (s) { return s.d; }));
+    var lo = Math.min.apply(null, all) - 5, hi = Math.max.apply(null, all) + 5;
+    var vals = pts.filter(function (x) { return x.v !== null; }).map(function (x) { return x.v; }).concat(sales.map(function (s) { return s.v; }));
+    var vhi = Math.max.apply(null, vals), vlo = Math.min.apply(null, vals), pad = Math.max((vhi - vlo) * 0.15, vhi * 0.05);
+    var vmax = vhi + pad, vmin = Math.max(0, vlo - pad);
+    var raw = (vmax - vmin) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw || 1))), step = [1, 2, 2.5, 5, 10].map(function (f) { return f * mag; }).filter(function (v) { return v >= raw; })[0];
+    vmin = Math.floor(vmin / step) * step; vmax = Math.ceil(vmax / step) * step; var nt = Math.round((vmax - vmin) / step);
+    var W = 900, H = 240, m = { l: 70, r: 20, t: 18, b: 28 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    var x = function (d) { return m.l + (d - lo) / Math.max(1, hi - lo) * iw; }, y = function (v) { return m.t + ih - (v - vmin) / (vmax - vmin || 1) * ih; };
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="ACB per unit of ' + esc(coin) + ' over time">';
+    for (var g = 0; g <= nt; g++) { var gv = vmin + step * g; s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(gv) + '" y2="' + y(gv) + '" stroke="var(--rule)" stroke-width="1"/><text x="' + (m.l - 8) + '" y="' + (y(gv) + 4) + '" text-anchor="end">' + Math.round(gv).toLocaleString("en-CA") + "</text>"; }
+    // step line
+    var path = "", prev = null;
+    pts.forEach(function (pt) {
+      if (pt.v === null) { if (prev) path += "H" + x(pt.d).toFixed(1); prev = null; return; }
+      if (prev === null) path += "M" + x(pt.d).toFixed(1) + "," + y(pt.v).toFixed(1);
+      else path += "H" + x(pt.d).toFixed(1) + "V" + y(pt.v).toFixed(1);
+      prev = pt;
+    });
+    var lastPt = pts[pts.length - 1]; if (lastPt.v !== null) path += "H" + x(hi - 5).toFixed(1);
+    s += '<path d="' + path + '" fill="none" stroke="var(--accent)" stroke-width="2"/>';
+    pts.forEach(function (pt) { if (pt.v !== null) s += '<circle cx="' + x(pt.d) + '" cy="' + y(pt.v) + '" r="3.5" fill="' + (pt.tag === "Denied loss added" ? "var(--warn)" : "var(--accent)") + '"/>'; });
+    sales.forEach(function (sa) {
+      var c = SL.cmp(sa.gain, Z) >= 0 ? "var(--ok)" : "var(--crit)";
+      s += '<rect x="' + (x(sa.d) - 4.5) + '" y="' + (y(sa.v) - 4.5) + '" width="9" height="9" fill="var(--card)" stroke="' + c + '" stroke-width="2" transform="rotate(45 ' + x(sa.d) + " " + y(sa.v) + ')"/>';
+      var anc = x(sa.d) > W - 140 ? "end" : x(sa.d) < m.l + 70 ? "start" : "middle", lx = anc === "end" ? x(sa.d) + 6 : anc === "start" ? x(sa.d) - 6 : x(sa.d);
+      s += '<text class="halo" x="' + lx + '" y="' + (y(sa.v) - 12) + '" text-anchor="' + anc + '" style="fill:' + c + '">Sell ' + (SL.cmp(sa.gain, Z) >= 0 ? "gain " : "loss ") + cad(SL.cmp(sa.gain, Z) >= 0 ? sa.gain : SL.sub(Z, sa.gain)) + "</text>";
+    });
+    s += '<text x="' + m.l + '" y="' + (H - 6) + '">' + SL.dayStr(lo + 5) + '</text><text x="' + (W - m.r) + '" y="' + (H - 6) + '" text-anchor="end">' + SL.dayStr(hi - 5) + "</text>";
+    s += '<line id="cx" x1="0" x2="0" y1="' + m.t + '" y2="' + (m.t + ih) + '" stroke="var(--ink-3)" stroke-dasharray="3 3" style="display:none"/>';
+    s += '<rect id="hit" x="' + m.l + '" y="' + m.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/></svg><div class="tip" id="tip"></div>';
+    s += '<p class="small muted">Line: ACB per ' + esc(coin) + '. Dots: purchases' + (res.uplifts.length ? ", amber dots: denied losses added" : "") + ". Diamonds: sales, green for a gain and red for a loss.</p>";
+    $("chart").innerHTML = s;
+    var svg = $("chart").querySelector("svg"), tip = $("tip"), cxl = svg.querySelector("#cx");
+    var marks = pts.filter(function (p2) { return p2.v !== null; }).map(function (p2) { return { d: p2.d, t: p2.tag + ": " + p2.v.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " CAD per unit" }; })
+      .concat(sales.map(function (sa) { return { d: sa.d, t: "Sell " + units(sa.r.qty) + " at ACB " + Number(sa.v.toFixed(2)).toLocaleString("en-CA") + ", " + (SL.cmp(sa.gain, Z) >= 0 ? "gain " : "loss ") + cad(SL.cmp(sa.gain, Z) >= 0 ? sa.gain : SL.sub(Z, sa.gain)) }; }));
+    svg.querySelector("#hit").addEventListener("mousemove", function (e) {
+      var b = svg.getBoundingClientRect(), px = (e.clientX - b.left) / b.width * W, best = null;
+      marks.forEach(function (mk) { var dx = Math.abs(x(mk.d) - px); if (!best || dx < best.dx) best = { dx: dx, mk: mk }; });
+      if (!best || best.dx > 40) { tip.style.display = "none"; cxl.style.display = "none"; return; }
+      var same = marks.filter(function (mk) { return mk.d === best.mk.d; });
+      cxl.setAttribute("x1", x(best.mk.d)); cxl.setAttribute("x2", x(best.mk.d)); cxl.style.display = "";
+      tip.innerHTML = "<b>" + SL.dayStr(best.mk.d) + "</b><br>" + same.map(function (mk) { return esc(mk.t); }).join("<br>");
+      tip.style.display = "block";
+      var left = x(best.mk.d) / W * b.width + 12; if (left + tip.offsetWidth > b.width) left = x(best.mk.d) / W * b.width - tip.offsetWidth - 12;
+      tip.style.left = left + "px"; tip.style.top = "10px";
+    });
+    svg.querySelector("#hit").addEventListener("mouseleave", function () { tip.style.display = "none"; cxl.style.display = "none"; });
+  }
+
+  /* paste import */
+  function importPaste() {
+    var lines = $("paste").value.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean), out = [], skipped = 0;
+    lines.forEach(function (l) {
+      var c = (l.indexOf("\t") >= 0 ? l.split("\t") : l.split(",")).map(function (x) { return x.trim(); });
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(c[0])) { skipped++; return; }
+      var t = (c[1] || "").toLowerCase(), kind = /^s/.test(t) ? "sell" : /^t|^x|^move/.test(t) ? "xfer" : "buy";
+      out.push({ date: c[0], kind: kind, ex: c[2] || "", qty: c[3] || "", amount: kind === "xfer" ? "" : c[4] || "", fee: kind === "xfer" ? "" : c[5] || "", to: kind === "xfer" ? (c[6] || c[4] || "") : "" });
+    });
+    if (!out.length) { $("pasteMsg").textContent = "No rows recognised. Each line should start with a date like 2025-01-15."; return; }
+    rows = out; openRows = {}; clearPreset(); renderEditor(); calc();
+    $("pasteMsg").textContent = out.length + " rows loaded" + (skipped ? ", " + skipped + " lines skipped." : ".");
+  }
+
+  /* events */
+  $("presets").addEventListener("click", function (e) { var b = e.target.closest("[data-p]"); if (b) load(b.dataset.p); });
+  ["coin", "openQ", "openT", "openEx"].forEach(function (k) { $(k).addEventListener("input", function () { clearPreset(); calc(); }); });
+  $("applySL").addEventListener("change", calc);
+  $("trades").addEventListener("input", function (e) {
+    var t = e.target, tr = t.closest("tr"); if (!tr || !t.dataset.k) return;
+    var r = rows[+tr.dataset.i]; r[t.dataset.k] = t.value; clearPreset();
+    if (t.dataset.k === "kind") { renderEditor(); }
+    calc();
+  });
+  $("trades").addEventListener("change", function (e) { if (e.target.dataset && (e.target.dataset.k === "ex" || e.target.dataset.k === "to")) updateList(); });
+  $("trades").addEventListener("click", function (e) {
+    var u = e.target.closest("[data-up]");
+    if (u) { var k = +u.dataset.up; if (k > 0) { var t = rows[k - 1]; rows[k - 1] = rows[k]; rows[k] = t; clearPreset(); renderEditor(); calc(); var nb = $("trades").querySelector('[data-up="' + (k - 1) + '"]'); if (nb && !nb.disabled) nb.focus(); } return; }
+    var b = e.target.closest("[data-del]"); if (!b) return; rows.splice(+b.dataset.del, 1); if (!rows.length) rows.push({ date: "", kind: "buy", ex: "", to: "", qty: "", amount: "", fee: "" }); clearPreset(); renderEditor(); calc(); });
+  $("addRow").addEventListener("click", function () {
+    var lastR = rows[rows.length - 1] || {};
+    rows.push({ date: lastR.date || "", kind: "buy", ex: lastR.ex || "", to: "", qty: "", amount: "", fee: "" });
+    renderEditor(); calc(); var ins = $("trades").querySelectorAll('input[data-k="qty"]'); ins[ins.length - 1].focus();
+  });
+  function toggle(tr) { var k = tr.dataset.k; openRows[k] = !openRows[k]; if (last && !last.res.error) renderJournal(last.p, last.res, last.coin, last.opening); var n = document.querySelector('#journal tr.jr[data-k="' + k + '"]'); if (n) n.focus(); }
+  $("journal").addEventListener("click", function (e) { var tr = e.target.closest("tr.jr"); if (tr) toggle(tr); });
+  $("journal").addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.matches("tr.jr")) { e.preventDefault(); toggle(e.target); } });
+  $("doPaste").addEventListener("click", importPaste);
+
+  load("multi");
+})();
+</script>
+
+</body>
+</html>

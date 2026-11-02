@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crypto Tax Tools</title>
+<meta name="description" content="Free calculators for Canadian crypto tax: pooled ACB across exchanges and superficial losses, with every step shown. Runs in your browser.">
+<link rel="canonical" href="https://polud.github.io/crypto-tax-tools/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crypto Tax Tools">
+<meta property="og:title" content="Crypto Tax Tools">
+<meta property="og:description" content="Free calculators for Canadian crypto tax: pooled ACB across exchanges and superficial losses, with every step shown.">
+<meta property="og:url" content="https://polud.github.io/crypto-tax-tools/">
+<meta property="og:image" content="https://polud.github.io/crypto-tax-tools/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Crypto Tax Tools">
+<meta name="twitter:description" content="Free calculators for Canadian crypto tax: pooled ACB across exchanges and superficial losses, with every step shown.">
+<meta name="twitter:image" content="https://polud.github.io/crypto-tax-tools/og/home.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,600&display=swap">
+<style>
+:root {
+  --bg: #F4F7F8; --card: #FFFFFF; --ink: #0F1A1E; --ink-2: #44565C; --ink-3: #6B7E84; --rule: #DBE4E6; --accent: #0891B2; --accent-soft: #DDF0F5;
+  --f-display: "Newsreader", Georgia, serif; --f-ui: "IBM Plex Sans", system-ui, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, monospace; --r: 4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D1416; --card: #141F22; --ink: #E6EDEF; --ink-2: #A9BBC0; --ink-3: #7E9298; --rule: #233237; --accent: #2E9CB8; --accent-soft: #15323A; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0D1416; --card: #141F22; --ink: #E6EDEF; --ink-2: #A9BBC0; --ink-3: #7E9298; --rule: #233237; --accent: #2E9CB8; --accent-soft: #15323A; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--f-ui); }
+.wrap { max-width: 880px; margin: 0 auto; padding: 40px max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 24px; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+h1, h2 { font-family: var(--f-display); font-weight: 600; margin: 0; letter-spacing: -0.005em; }
+h1 { font-size: 38px; line-height: 1.1; }
+h2 { font-size: 22px; }
+p { margin: 0; }
+header { display: grid; gap: 8px; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
+header p { color: var(--ink-2); max-width: 64ch; }
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+a.tool { display: grid; gap: 10px; align-content: start; background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 20px; color: inherit; text-decoration: none; }
+a.tool:hover { border-color: var(--accent); }
+a.tool:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tool p { color: var(--ink-2); font-size: 14px; }
+.tool code { font-family: var(--f-mono); font-size: 13px; background: var(--accent-soft); color: var(--accent); padding: 2px 6px; border-radius: 3px; justify-self: start; }
+.go { color: var(--accent); font-weight: 500; font-size: 14px; }
+.foot { color: var(--ink-3); font-size: 12.5px; max-width: 80ch; display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">Canadian crypto tax</div>
+    <h1>Crypto Tax Tools</h1>
+    <p>Free calculators for the parts of Canadian crypto tax people most often get wrong. Each one shows every step, cites the Income Tax Act and CRA guidance, and runs entirely in your browser: nothing you enter is uploaded.</p>
+  </header>
+  <div class="tools">
+    <a class="tool" href="acb-pool/">
+      <div class="label">ITA s.47</div>
+      <h2>ACB Pool Calculator</h2>
+      <p>Bought the same coin on several exchanges and wallets? For tax it is one pool with one average cost. See your adjusted cost base, gain or loss on every sale and any superficial loss, and how far per-exchange reports can be off.</p>
+      <code>one pool, not one per exchange</code>
+      <span class="go">Open the calculator →</span>
+    </a>
+    <a class="tool" href="superficial-loss/">
+      <div class="label">ITA s.54</div>
+      <h2>Superficial Loss Calculator</h2>
+      <p>Sold at a loss and bought the same coin back within 30 days before or after? See how much of the loss is denied, how much you can claim now and how much is added to your cost base.</p>
+      <code>min(S, P, B) ÷ S × L</code>
+      <span class="go">Open the calculator →</span>
+    </a>
+  </div>
+  <div class="foot">
+    <p>General information, not tax or legal advice. Check the results against your own records before filing, and get professional advice for your situation.</p>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="https://polud.github.io/crypto-tax-tools/superficial-loss/">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Crypto Tax Tools">
+<meta property="og:title" content="Superficial Loss Calculator">
+<meta property="og:description" content="Sold crypto at a loss and bought it back within 30 days? See how much of the loss CRA denies, with every step shown.">
+<meta property="og:url" content="https://polud.github.io/crypto-tax-tools/superficial-loss/">
+<meta property="og:image" content="https://polud.github.io/crypto-tax-tools/og/superficial-loss.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Superficial Loss Calculator">
+<meta name="twitter:description" content="Sold crypto at a loss and bought it back within 30 days? See how much of the loss CRA denies, with every step shown.">
+<meta name="twitter:image" content="https://polud.github.io/crypto-tax-tools/og/superficial-loss.png">
+<title>Superficial Loss Calculator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Sold crypto at a loss and bought it back within 30 days? See how much of the loss CRA denies, with the formula CRA accepts and every step shown.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: inputs column on the left, the answer and its working on the right; one column under 920px. */
+:root {
+  --bg: #F4F7F8; --card: #FFFFFF; --ink: #0F1A1E; --ink-2: #44565C; --ink-3: #6B7E84; --rule: #DBE4E6; --tint: #EAF1F3;
+  --accent: #0891B2; --accent-ink: #FFFFFF; --accent-soft: #DDF0F5;
+  --ok: #15803D; --warn: #B45309; --crit: #BE123C; --ok-soft: #E3F2E8; --warn-soft: #FBEEDD; --crit-soft: #FBE4EA;
+  --f-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --f-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0D1416; --card: #141F22; --ink: #E6EDEF; --ink-2: #A9BBC0; --ink-3: #7E9298; --rule: #233237; --tint: #182629;
+  --accent: #2E9CB8; --accent-ink: #061014; --accent-soft: #15323A;
+  --ok: #4FBF7A; --warn: #E59A3A; --crit: #F0607E; --ok-soft: #14301F; --warn-soft: #33240F; --crit-soft: #3A1720;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0D1416; --card: #141F22; --ink: #E6EDEF; --ink-2: #A9BBC0; --ink-3: #7E9298; --rule: #233237; --tint: #182629;
+  --accent: #2E9CB8; --accent-ink: #061014; --accent-soft: #15323A;
+  --ok: #4FBF7A; --warn: #E59A3A; --crit: #F0607E; --ok-soft: #14301F; --warn-soft: #33240F; --crit-soft: #3A1720;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--f-ui); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 48px; }
+h1, h2 { font-family: var(--f-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+h1 { font-size: 32px; line-height: 1.1; }
+h2 { font-size: 19px; line-height: 1.25; }
+h3 { margin: 0; font-size: 13px; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--ink-2); }
+.small { font-size: 12.5px; }
+.masthead { padding-bottom: 16px; border-bottom: 1px solid var(--rule); margin-bottom: 20px; display: grid; gap: 6px; }
+.masthead .sub { color: var(--ink-2); max-width: 68ch; }
+.grid { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--card); border: 1px solid var(--rule); border-radius: var(--r); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.stack { display: grid; gap: 16px; min-width: 0; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.field { display: grid; gap: 4px; }
+.field > span { font-size: 12.5px; color: var(--ink-2); }
+.field small { font-size: 11.5px; color: var(--ink-3); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; }
+input[type="text"], input[type="date"], input[type="number"] {
+  width: 100%; font: 400 13px/1.4 var(--f-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: var(--r); padding: 7px 8px; min-width: 0; }
+input:disabled { opacity: 0.6; }
+input:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: 500 12.5px/1 var(--f-ui); border-radius: var(--r); padding: 8px 10px; cursor: pointer; border: 1px solid var(--rule); background: var(--card); color: var(--ink); }
+button:hover { border-color: var(--ink-3); }
+button.chip { padding: 6px 9px; }
+button.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+button.icon { padding: 6px 8px; font-family: var(--f-mono); }
+.buys { display: grid; gap: 6px; }
+.buy { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto auto; gap: 6px; align-items: center; }
+@media (max-width: 480px) { .buy { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; } .buy input[type="date"] { grid-column: 1 / -1; } .buy .tag { justify-self: start; } }
+.tag { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 999px; white-space: nowrap; }
+.tag.in { color: var(--accent); background: var(--accent-soft); }
+.tag.out { color: var(--ink-3); background: var(--tint); }
+.check { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; font-size: 13px; cursor: pointer; }
+.check input { margin: 2px 0 0; accent-color: var(--accent); }
+.err { color: var(--crit); font-size: 12.5px; }
+
+.verdict { display: grid; gap: 6px; padding: 18px; border-radius: var(--r); border: 1px solid var(--rule); background: var(--card); }
+.verdict .big { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 34px; font-weight: 500; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.verdict .big small { font-size: 14px; color: var(--ink-3); margin-left: 6px; font-weight: 400; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; width: max-content; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: var(--ok-soft); }
+.pill.warn { color: var(--warn); background: var(--warn-soft); }
+.pill.crit { color: var(--crit); background: var(--crit-soft); }
+.split { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: var(--r); background: var(--card); overflow: hidden; }
+@media (max-width: 560px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.split > div { padding: 12px 14px; display: grid; gap: 3px; margin: 0 -1px -1px 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); min-width: 0; }
+.split .v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 18px; overflow-wrap: anywhere; }
+.split .n { font-size: 12px; color: var(--ink-2); }
+
+.timeline svg { display: block; width: 100%; height: auto; overflow: visible; }
+.timeline text { font-family: var(--f-mono); font-size: 11px; fill: var(--ink-3); }
+.timeline .halo { paint-order: stroke; stroke: var(--card); stroke-width: 4px; stroke-linejoin: round; }
+
+.work { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; font-size: 13px; align-items: baseline; }
+.work .k { color: var(--ink-3); font-size: 12.5px; }
+.work .f { font-family: var(--f-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.work .f b { font-weight: 500; color: var(--ink); }
+.work .sep { grid-column: 1 / -1; border-top: 1px solid var(--rule); margin: 2px 0; }
+@media (max-width: 560px) { .work { grid-template-columns: minmax(0, 1fr); } .work .k { margin-top: 4px; } }
+.trap { border-left: 3px solid var(--warn); padding: 10px 12px; background: var(--warn-soft); border-radius: 0 var(--r) var(--r) 0; display: grid; gap: 4px; font-size: 13px; }
+.notes { display: grid; gap: 8px; color: var(--ink-2); font-size: 13px; max-width: 80ch; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.notes b { color: var(--ink); font-weight: 600; }
+.sources { display: grid; gap: 4px; font-size: 12.5px; }
+.foot { color: var(--ink-3); font-size: 12px; max-width: 90ch; margin-top: 4px; }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="label">Canadian crypto tax · ITA s.54</div>
+    <h1>Superficial Loss Calculator</h1>
+    <p class="sub">Sell crypto at a loss and buy the same coin back within 30 days before or after the sale, and part or all of the loss is denied. Enter your trades to see how much, using the formula CRA has accepted, with every step shown.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card" aria-label="Your trades">
+      <div class="field"><span>Start from an example</span>
+        <div class="presets" id="presets">
+          <button type="button" class="chip" data-p="cra">CRA's own example</button>
+          <button type="button" class="chip" data-p="full">Bought it all back</button>
+          <button type="button" class="chip" data-p="sold">Sold the rebuy too</button>
+          <button type="button" class="chip" data-p="clear">Blank</button>
+        </div>
+      </div>
+
+      <label class="field"><span>Coin</span><input type="text" id="asset" maxlength="12" spellcheck="false"></label>
+
+      <div class="label" style="margin-top:4px">The sale at a loss</div>
+      <div class="row2">
+        <label class="field"><span>Sale date</span><input type="date" id="saleDate"></label>
+        <label class="field"><span>Units sold</span><input type="text" id="S" inputmode="decimal" spellcheck="false"></label>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Adjusted cost base of those units, CAD</span><input type="text" id="acb" inputmode="decimal" spellcheck="false"></label>
+        <label class="field"><span>Proceeds, CAD</span><input type="text" id="proceeds" inputmode="decimal" spellcheck="false"></label>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Selling fees, CAD</span><input type="text" id="fees" inputmode="decimal" spellcheck="false" placeholder="0"></label>
+        <label class="field"><span>Units held just before the sale</span><input type="text" id="held" inputmode="decimal" spellcheck="false"></label>
+      </div>
+
+      <div class="label" style="margin-top:4px">Purchases of the same coin</div>
+      <p class="small muted">Every purchase from 30 days before to 30 days after the sale counts, on any exchange or wallet. Purchases outside the window are shown but ignored.</p>
+      <div class="buys" id="buys"></div>
+      <div><button type="button" id="addBuy">Add a purchase</button></div>
+
+      <div class="label" style="margin-top:4px">Units held 30 days after the sale</div>
+      <label class="check"><input type="checkbox" id="manualB"><span>I sold or gave away units after the sale, so I will enter this myself</span></label>
+      <label class="field"><span>Units held at the end of day 30</span><input type="text" id="B" inputmode="decimal" spellcheck="false"><small id="bHint"></small></label>
+      <p class="err" id="err" role="alert"></p>
+    </section>
+
+    <div class="stack">
+      <section class="verdict" id="verdict" aria-live="polite"></section>
+      <div class="split" id="split"></div>
+      <section class="card timeline" aria-labelledby="h-tl"><h2 id="h-tl">The 61-day window</h2><div id="tl"></div></section>
+      <section class="card" aria-labelledby="h-work"><h2 id="h-work">The working</h2><div class="work" id="work"></div><div id="trap"></div></section>
+      <section class="card" aria-labelledby="h-notes">
+        <h2 id="h-notes">What the calculator assumes</h2>
+        <div class="notes">
+          <ul>
+            <li><b>Same coin is identical property everywhere.</b> BTC on one exchange and BTC in your own wallet are identical, so a rebuy anywhere counts (IT-387R2).</li>
+            <li><b>Moving coins between your own wallets is not a purchase.</b> Leave transfers out of the purchases list.</li>
+            <li><b>People affiliated with you count too.</b> A rebuy by your spouse or common-law partner, or by a corporation you control, triggers the rule (ITA s.251.1). The calculator counts only the purchases you enter.</li>
+            <li><b>The window is inclusive.</b> A purchase exactly 30 days before or after the sale date is inside it. Dates are calendar days.</li>
+            <li><b>Rounding follows CRA's formula as written:</b> the fraction to 8 decimals, then the denied amount. The result matches our tax engine digit for digit on 312 test cases, including CRA's own example.</li>
+          </ul>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="h-src">
+        <h2 id="h-src">Sources</h2>
+        <div class="sources">
+          <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-54.html" target="_blank" rel="noopener">Income Tax Act, R.S.C. 1985, c. 1 (5th Supp.), s.54, definition of "superficial loss"</a>
+          <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-40.html" target="_blank" rel="noopener">Income Tax Act, s.40(2)(g)(i): a superficial loss is nil</a>
+          <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-53.html" target="_blank" rel="noopener">Income Tax Act, s.53(1)(f): the denied loss is added to the cost of the substituted property</a>
+          <a href="https://laws-lois.justice.gc.ca/eng/acts/I-3.3/section-251.1.html" target="_blank" rel="noopener">Income Tax Act, s.251.1: affiliated persons</a>
+          <a href="https://taxinterpretations.com/cra/severed-letters/2004-0073011E5" target="_blank" rel="noopener">CRA Technical Interpretation 2004-0073011E5, "Superficial Loss" (22 September 2004): the partial formula</a>
+          <a href="https://taxinterpretations.com/cra/it-bulletins/it387r2" target="_blank" rel="noopener">CRA Interpretation Bulletin IT-387R2, "Meaning of Identical Properties"</a>
+        </div>
+      </section>
+      <p class="foot">General information, not tax advice. A technical interpretation is CRA's administrative view, not law. The calculation runs in this browser; nothing you enter is sent anywhere. <a href="../">More calculators</a></p>
+    </div>
+  </div>
+</div>
+
+<script>/* Superficial-loss core: exact decimal arithmetic that reproduces the TaxLedger engine
+   (taxledger/engine/superficial_loss.py) digit for digit, including Python Decimal's
+   28-significant-digit context and ROUND_HALF_EVEN quantize to 8 places. */
+(function (root) {
+  "use strict";
+  var TEN = 10n, PREC = 28, Q = 8;
+
+  function pow10(k) { return TEN ** BigInt(k); }
+  function abs(x) { return x < 0n ? -x : x; }
+
+  // "12.3400" -> { n: 123400n, s: 4 }
+  function parse(str) {
+    var t = String(str).trim().replace(/[,\s_$]/g, "");
+    if (!/^-?\d*\.?\d+$|^-?\d+\.$/.test(t)) return null;
+    var neg = t[0] === "-"; if (neg) t = t.slice(1);
+    var parts = t.split("."), frac = parts[1] || "";
+    var n = BigInt((parts[0] || "0") + frac);
+    return { n: neg ? -n : n, s: frac.length };
+  }
+  function fromInt(i) { return { n: BigInt(i), s: 0 }; }
+  function align(a, b) { var s = Math.max(a.s, b.s); return [a.n * pow10(s - a.s), b.n * pow10(s - b.s), s]; }
+  function add(a, b) { var x = align(a, b); return { n: x[0] + x[1], s: x[2] }; }
+  function sub(a, b) { var x = align(a, b); return { n: x[0] - x[1], s: x[2] }; }
+  function cmp(a, b) { var x = align(a, b); return x[0] < x[1] ? -1 : x[0] > x[1] ? 1 : 0; }
+  function min3(a, b, c) { var m = cmp(a, b) <= 0 ? a : b; return cmp(m, c) <= 0 ? m : c; }
+  function isPos(a) { return a.n > 0n; }
+
+  // round num/den (den > 0) to an integer, half to even
+  function divHalfEven(num, den) {
+    var neg = num < 0n, a = abs(num), q = a / den, r = a - q * den, twice = 2n * r;
+    if (twice > den || (twice === den && (q & 1n) === 1n)) q += 1n;
+    return neg ? -q : q;
+  }
+  // exact rational num/den rounded to PREC significant digits (Python's default context)
+  function ratSig(num, den) {
+    if (num === 0n) return { n: 0n, s: 0 };
+    var a = abs(num), e = a.toString().length - den.toString().length;
+    // find e with 10^e <= a/den < 10^(e+1)
+    var lhs = function (k) { return k >= 0 ? den * pow10(k) : den; }, rhs = function (k) { return k >= 0 ? a : a * pow10(-k); };
+    if (rhs(e) < lhs(e)) e -= 1;
+    var k = PREC - 1 - e; // scale so the result has PREC digits
+    var n = k >= 0 ? divHalfEven(num * pow10(k), den) : divHalfEven(num, den * pow10(-k));
+    if (abs(n).toString().length > PREC) { n = divHalfEven(n, TEN); k -= 1; } // carry 9.99.. -> 10.0
+    return k >= 0 ? { n: n, s: k } : { n: n * pow10(-k), s: 0 };
+  }
+  function quantize(a, places) {
+    if (a.s <= places) return { n: a.n * pow10(places - a.s), s: places };
+    return { n: divHalfEven(a.n, pow10(a.s - places)), s: places };
+  }
+  function quantizeHalfUp(a, places) {
+    if (a.s <= places) return { n: a.n * pow10(places - a.s), s: places };
+    var d = pow10(a.s - places), neg = a.n < 0n, m = abs(a.n), q = m / d, r = m - q * d;
+    if (2n * r >= d) q += 1n;
+    return { n: neg ? -q : q, s: places };
+  }
+  // Python Decimal add/sub round to the 28-digit context too
+  function addC(a, b) { var x = add(a, b); return ratSig(x.n, pow10(x.s)); }
+  function subC(a, b) { var x = sub(a, b); return ratSig(x.n, pow10(x.s)); }
+  function div(a, b) { return ratSig(a.n * pow10(b.s), b.n * pow10(a.s)); }
+  function mul(a, b) { return ratSig(a.n * b.n, pow10(a.s + b.s)); }
+
+  function toStr(a, places) {
+    var x = places === undefined ? a : quantize(a, places), neg = x.n < 0n, d = abs(x.n).toString();
+    if (x.s === 0) return (neg ? "-" : "") + d;
+    while (d.length <= x.s) d = "0" + d;
+    return (neg ? "-" : "") + d.slice(0, d.length - x.s) + "." + d.slice(d.length - x.s);
+  }
+  function toNum(a) { return Number(toStr(a)); }
+
+  /* Dates as YYYY-MM-DD, compared in UTC days. */
+  function dayNum(d) { var p = d.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 864e5; }
+  function dayStr(n) { return new Date(n * 864e5).toISOString().slice(0, 10); }
+
+  /*
+    SL = min(S, P, B) / S x L   (CRA TI 2004-0073011E5)
+    sale: { date, S, L, B }  acquisitions: [{ date, qty }]
+    Mirrors detect_superficial_losses: closed window [date-30, date+30].
+  */
+  function detect(sale, acquisitions, windowDays) {
+    var W = windowDays === undefined ? 30 : windowDays;
+    var d = dayNum(sale.date), start = d - W, end = d + W;
+    var P = fromInt(0), inWindow = [];
+    acquisitions.forEach(function (a, i) {
+      var t = dayNum(a.date), inside = t >= start && t <= end;
+      inWindow.push(inside);
+      if (inside) P = add(P, a.qty);
+    });
+    var res = { windowStart: dayStr(start), windowEnd: dayStr(end), P: P, inWindow: inWindow, applies: false };
+    if (!isPos(sale.L)) { res.reason = "gain"; return res; }
+    if (!isPos(P)) { res.reason = "no-repurchase"; return res; }
+    if (!isPos(sale.B)) { res.reason = "none-held"; return res; }
+    var m = min3(sale.S, P, sale.B);
+    var fraction = quantize(div(m, sale.S), Q);
+    var denied = quantize(mul(fraction, sale.L), Q);
+    if (cmp(denied, sale.L) > 0) denied = sale.L;
+    var allowable = quantize(sub(sale.L, denied), Q);
+    res.applies = true; res.min = m; res.fraction = fraction; res.denied = denied; res.allowable = allowable;
+    return res;
+  }
+
+  root.SL = { parse: parse, addC: addC, subC: subC, quantizeHalfUp: quantizeHalfUp, add: add, sub: sub, mul: mul, div: div, cmp: cmp, quantize: quantize, toStr: toStr, toNum: toNum,
+    fromInt: fromInt, detect: detect, dayNum: dayNum, dayStr: dayStr, min3: min3 };
+})(typeof window !== "undefined" ? window : globalThis);
+</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var P = SL.parse;
+  var PRESETS = {
+    cra: { asset: "BTC", saleDate: "2025-07-01", S: "50", acb: "3000000", proceeds: "2000000", fees: "", held: "60",
+      buys: [["2025-06-15", "10"], ["2025-07-15", "10"]], manualB: false, B: "" },
+    full: { asset: "ETH", saleDate: "2025-11-03", S: "4", acb: "17200", proceeds: "13600", fees: "40", held: "4",
+      buys: [["2025-11-20", "4"]], manualB: false, B: "" },
+    sold: { asset: "SOL", saleDate: "2025-08-12", S: "120", acb: "30000", proceeds: "24000", fees: "", held: "120",
+      buys: [["2025-08-20", "120"]], manualB: true, B: "0" },
+    clear: { asset: "", saleDate: "", S: "", acb: "", proceeds: "", fees: "", held: "", buys: [["", ""]], manualB: false, B: "" }
+  };
+  var buys = [];
+
+  function fmt(x, d) {
+    if (x === null || x === undefined) return "—";
+    var v = typeof x === "number" ? x : SL.toNum(x);
+    return (v < 0 ? "−" : "") + Math.abs(v).toLocaleString("en-CA", { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function units(x) { var s = SL.toStr(x); if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, ""); var p = s.split("."); return Number(p[0]).toLocaleString("en-CA") + (p[1] ? "." + p[1] : ""); }
+  function exact(x) { var s = SL.toStr(x); if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, ""); return s; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function load(name) {
+    var p = PRESETS[name];
+    ["asset", "saleDate", "S", "acb", "proceeds", "fees", "held", "B"].forEach(function (k) { $(k).value = p[k]; });
+    $("manualB").checked = p.manualB;
+    buys = p.buys.map(function (b) { return { date: b[0], qty: b[1] }; });
+    document.querySelectorAll("#presets .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.p === name ? "true" : "false"); });
+    renderBuys(); calc();
+  }
+
+  function renderBuys(inWindow) {
+    $("buys").innerHTML = buys.map(function (b, i) {
+      var tag = inWindow && b.date && b.qty ? (inWindow[i] ? '<span class="tag in">in window</span>' : '<span class="tag out">outside</span>') : '<span class="tag out">—</span>';
+      return '<div class="buy"><input type="date" aria-label="Purchase ' + (i + 1) + ' date" data-i="' + i + '" data-k="date" value="' + esc(b.date) + '">' +
+        '<input type="text" inputmode="decimal" spellcheck="false" aria-label="Purchase ' + (i + 1) + ' units" placeholder="units" data-i="' + i + '" data-k="qty" value="' + esc(b.qty) + '">' +
+        tag + '<button type="button" class="icon" data-del="' + i + '" aria-label="Remove purchase ' + (i + 1) + '">×</button></div>';
+    }).join("");
+  }
+  function updateTags(inWindow) {
+    var rows = $("buys").querySelectorAll(".buy");
+    rows.forEach(function (row, i) {
+      var b = buys[i], t = row.querySelector(".tag");
+      if (!b || !b.date || !b.qty || !inWindow) { t.className = "tag out"; t.textContent = "—"; return; }
+      t.className = "tag " + (inWindow[i] ? "in" : "out"); t.textContent = inWindow[i] ? "in window" : "outside";
+    });
+  }
+
+  function calc() {
+    $("B").disabled = !$("manualB").checked;
+    var err = [], v = {};
+    var need = { S: "units sold", acb: "adjusted cost base", proceeds: "proceeds", held: "units held before the sale" };
+    Object.keys(need).forEach(function (k) { v[k] = P($(k).value); if (!v[k]) err.push(need[k]); });
+    v.fees = $("fees").value.trim() ? P($("fees").value) : SL.fromInt(0);
+    if (!v.fees) err.push("selling fees");
+    var date = $("saleDate").value; if (!date) err.push("sale date");
+    var list = [];
+    buys.forEach(function (b) { if (b.date && b.qty) { var q = P(b.qty); if (q && SL.cmp(q, SL.fromInt(0)) > 0) list.push({ date: b.date, qty: q }); } });
+    if (err.length) { $("err").textContent = "Enter " + err.join(", ") + "."; blank(); updateTags(null); return; }
+    if (SL.cmp(v.S, SL.fromInt(0)) <= 0) { $("err").textContent = "Units sold must be more than zero."; blank(); return; }
+    if (SL.cmp(v.held, v.S) < 0) { $("err").textContent = "You cannot sell more units than you held before the sale."; blank(); return; }
+    $("err").textContent = "";
+
+    // B: units held at the end of day 30, unless entered
+    var d = SL.dayNum(date), afterBuys = SL.fromInt(0);
+    list.forEach(function (b) { var t = SL.dayNum(b.date); if (t > d && t <= d + 30) afterBuys = SL.add(afterBuys, b.qty); });
+    var autoB = SL.add(SL.sub(v.held, v.S), afterBuys), B;
+    if ($("manualB").checked) { B = P($("B").value); if (!B || SL.cmp(B, SL.fromInt(0)) < 0) { $("err").textContent = "Enter the units held at the end of day 30."; blank(); return; }
+      if (SL.cmp(B, autoB) > 0) { $("err").textContent = "Units held at the end of day 30 cannot be more than " + units(autoB) + ": the units held before the sale, minus the units sold, plus the purchases in the 30 days after. If you acquired more, add them as purchases."; blank(); return; }
+      $("bHint").textContent = "Without later sales it would be " + units(autoB) + "."; }
+    else { B = autoB; $("B").value = exact(autoB); $("bHint").textContent = "Held before the sale − units sold + purchases in the 30 days after."; }
+
+    var L = SL.sub(SL.add(v.acb, v.fees), v.proceeds); // loss = ACB + outlays − proceeds
+    var Lpos = SL.cmp(L, SL.fromInt(0)) > 0 ? L : SL.fromInt(0);
+    var r = SL.detect({ date: date, S: v.S, L: Lpos, B: B }, list);
+    var inWindow = []; var j = 0;
+    buys.forEach(function (b) { if (b.date && b.qty && P(b.qty) && SL.cmp(P(b.qty), SL.fromInt(0)) > 0) { inWindow.push(r.inWindow[j++]); } else inWindow.push(false); });
+    updateTags(inWindow);
+    render(v, L, Lpos, B, r, date, list, $("asset").value.trim().toUpperCase() || "units");
+  }
+
+  function blank() {
+    $("verdict").innerHTML = '<span class="pill warn">Incomplete</span><p class="muted">Fill in the sale to see the result.</p>';
+    $("split").innerHTML = ""; $("tl").innerHTML = ""; $("work").innerHTML = ""; $("trap").innerHTML = "";
+  }
+
+  function render(v, L, Lpos, B, r, date, list, coin) {
+    var gain = SL.cmp(L, SL.fromInt(0)) <= 0;
+    var head, denied = r.applies ? r.denied : SL.fromInt(0), allowable = r.applies ? r.allowable : Lpos;
+    if (gain) head = '<span class="pill ok">No loss</span><div class="big">' + fmt(SL.sub(SL.fromInt(0), L), 2) + '<small>CAD gain</small></div><p class="muted">The sale made a gain, so the superficial-loss rule does not apply.</p>';
+    else if (!r.applies) {
+      var why = r.reason === "no-repurchase" ? "You bought no " + esc(coin) + " between " + r.windowStart + " and " + r.windowEnd + "." : "You held no " + esc(coin) + " at the end of day 30 (" + r.windowEnd + ").";
+      head = '<span class="pill ok">Loss allowed in full</span><div class="big">' + fmt(Lpos, 2) + '<small>CAD loss you can claim</small></div><p class="muted">' + why + " The rule needs both a purchase in the window and units still held at the end of it.</p>";
+    } else {
+      var full = SL.cmp(denied, Lpos) === 0;
+      head = '<span class="pill ' + (full ? "crit" : "warn") + '">' + (full ? "Loss denied in full" : "Loss partly denied") + '</span><div class="big">' + fmt(denied, 2) + '<small>CAD of the loss is denied</small></div>' +
+        '<p class="muted">Of the ' + fmt(Lpos, 2) + " CAD loss, " + fmt(allowable, 2) + " CAD can be claimed now. The denied part is not lost: it is added to the cost of the " + units(B) + " " + esc(coin) + " you still held, and reduces the gain or increases the loss when you sell them.</p>";
+    }
+    $("verdict").innerHTML = head;
+
+    var uplift = r.applies ? SL.toNum(denied) / SL.toNum(B) : 0;
+    $("split").innerHTML = gain ? "" :
+      cell("Loss on the sale", fmt(Lpos, 2) + " CAD", "Cost base + fees − proceeds") +
+      cell("Claimable now", fmt(allowable, 2) + " CAD", "Half of it is the allowable capital loss: " + fmt(SL.toNum(allowable) / 2, 2)) +
+      cell("Added to cost base", fmt(denied, 2) + " CAD", r.applies ? fmt(uplift, 2) + " CAD per " + esc(coin) + " held" : "Nothing to add");
+
+    timeline(date, r, list, coin);
+    work(v, L, Lpos, B, r, coin, gain);
+  }
+  function cell(l, val, n) { return '<div><div class="label">' + l + '</div><div class="v">' + val + '</div><div class="n">' + n + "</div></div>"; }
+
+  function work(v, L, Lpos, B, r, coin, gain) {
+    var row = function (k, f) { return '<div class="k">' + k + '</div><div class="f">' + f + "</div>"; };
+    var h = row("L, the loss", fmt(v.acb, 2) + " + " + fmt(v.fees, 2) + " − " + fmt(v.proceeds, 2) + " = <b>" + fmt(L, 2) + "</b> CAD" + (gain ? " (a gain, so no superficial loss)" : ""));
+    if (!gain) {
+      h += row("S, units sold", "<b>" + exact(v.S) + "</b>");
+      h += row("P, bought in window", r.windowStart + " to " + r.windowEnd + ": <b>" + exact(r.P) + "</b>");
+      h += row("B, held at day 30", "<b>" + exact(B) + "</b>");
+      h += '<div class="sep"></div>';
+      if (r.applies) {
+        h += row("Formula", "SL = min(S, P, B) ÷ S × L");
+        h += row("Fraction", "min(" + exact(v.S) + ", " + exact(r.P) + ", " + exact(B) + ") ÷ " + exact(v.S) + " = " + exact(r.min) + " ÷ " + exact(v.S) + " = <b>" + exact(r.fraction) + "</b>");
+        h += row("Denied (SL)", exact(r.fraction) + " × " + fmt(Lpos, 2) + " = <b>" + fmt(r.denied, 2) + "</b> CAD");
+        h += row("Claimable", fmt(Lpos, 2) + " − " + fmt(r.denied, 2) + " = <b>" + fmt(r.allowable, 2) + "</b> CAD");
+        h += row("Cost base", "+" + fmt(r.denied, 2) + " CAD on the " + exact(B) + " " + esc(coin) + " held (s.53(1)(f))");
+      } else {
+        h += row("Result", r.reason === "no-repurchase" ? "P = 0: no purchase in the window, the loss stands." : "B = 0: nothing held at day 30, the loss stands.");
+      }
+    }
+    $("work").innerHTML = h;
+    // the inverted formula some tools use
+    var trap = "";
+    if (r.applies) {
+      var wrongFrac = SL.toNum(SL.sub(v.S, B)) / SL.toNum(v.S);
+      var wrong = Math.max(0, Math.min(1, wrongFrac)) * SL.toNum(Lpos);
+      if (Math.abs(wrong - SL.toNum(r.denied)) > 0.005) {
+        trap = '<div class="trap"><h3>A mistake to watch for</h3><p>Some calculations use (S − B) ÷ S × L instead. Here that would deny ' + fmt(wrong, 2) + " CAD rather than " + fmt(r.denied, 2) +
+          " CAD. It measures the units you did not keep, which is the part of the loss that should be allowed, not the part that is denied.</p></div>";
+      }
+    }
+    $("trap").innerHTML = trap;
+  }
+
+  function timeline(date, r, list, coin) {
+    var d = SL.dayNum(date), lo = d - 40, hi = d + 40;
+    list.forEach(function (b) { var t = SL.dayNum(b.date); if (t < lo) lo = t - 3; if (t > hi) hi = t + 3; });
+    var W = 720, H = 132, m = { l: 18, r: 18 }, iw = W - m.l - m.r, axis = 78;
+    var x = function (t) { return m.l + (t - lo) / (hi - lo) * iw; };
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Sale on ' + date + ", window from " + r.windowStart + " to " + r.windowEnd + ", " + list.length + ' purchases">';
+    s += '<rect x="' + x(d - 30) + '" y="' + (axis - 34) + '" width="' + (x(d + 30) - x(d - 30)) + '" height="46" fill="var(--accent-soft)" rx="3"/>';
+    s += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + axis + '" y2="' + axis + '" stroke="var(--rule)" stroke-width="1.5"/>';
+    s += '<text class="halo" x="' + x(d - 30) + '" y="' + (axis + 28) + '" text-anchor="middle">' + r.windowStart + "</text>";
+    s += '<text class="halo" x="' + x(d + 30) + '" y="' + (axis + 28) + '" text-anchor="middle">' + r.windowEnd + "</text>";
+    s += '<line x1="' + x(d) + '" x2="' + x(d) + '" y1="' + (axis - 40) + '" y2="' + (axis + 12) + '" stroke="var(--crit)" stroke-width="2"/>';
+    s += '<text class="halo" x="' + x(d) + '" y="' + (axis - 46) + '" text-anchor="middle" style="fill:var(--crit)">Sale ' + date + "</text>";
+    list.forEach(function (b, i) {
+      var t = SL.dayNum(b.date), inside = t >= d - 30 && t <= d + 30, cx = x(t);
+      s += '<circle cx="' + cx + '" cy="' + axis + '" r="6" fill="' + (inside ? "var(--accent)" : "var(--card)") + '" stroke="' + (inside ? "var(--accent)" : "var(--ink-3)") + '" stroke-width="1.5"/>';
+      s += '<text class="halo" x="' + cx + '" y="' + (axis - (i % 2 ? 18 : 12) - 4) + '" text-anchor="middle"' + (inside ? ' style="fill:var(--ink)"' : "") + ">+" + exact(b.qty) + "</text>";
+    });
+    s += '<text x="' + m.l + '" y="' + (H - 4) + '">' + SL.dayStr(lo) + '</text><text x="' + (W - m.r) + '" y="' + (H - 4) + '" text-anchor="end">' + SL.dayStr(hi) + "</text>";
+    s += "</svg>";
+    $("tl").innerHTML = s + '<p class="small muted">Filled dots are purchases inside the window and count as P. Hollow dots are outside it.</p>';
+  }
+
+  /* events */
+  $("presets").addEventListener("click", function (e) { var b = e.target.closest("[data-p]"); if (b) load(b.dataset.p); });
+  ["asset", "saleDate", "S", "acb", "proceeds", "fees", "held", "B"].forEach(function (k) { $(k).addEventListener("input", function () { clearPreset(); calc(); }); });
+  $("manualB").addEventListener("change", function () { clearPreset(); calc(); });
+  $("buys").addEventListener("input", function (e) { var t = e.target; if (t.dataset.i === undefined) return; buys[+t.dataset.i][t.dataset.k] = t.value; clearPreset(); calc(); });
+  $("buys").addEventListener("click", function (e) { var b = e.target.closest("[data-del]"); if (!b) return; buys.splice(+b.dataset.del, 1); if (!buys.length) buys.push({ date: "", qty: "" }); renderBuys(); clearPreset(); calc(); });
+  $("addBuy").addEventListener("click", function () { buys.push({ date: "", qty: "" }); renderBuys(); calc(); var inputs = $("buys").querySelectorAll('input[type="date"]'); inputs[inputs.length - 1].focus(); });
+  function clearPreset() { document.querySelectorAll("#presets .chip").forEach(function (b) { b.setAttribute("aria-pressed", "false"); }); }
+
+  load("cra");
+})();
+</script>
+
+</body>
+</html>
